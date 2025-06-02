@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+firmware = 'target/xtensa-esp32-espidf/debug/kitty-gif'
+elf = 'target/xtensa-esp32-espidf/debug/kitty-gif'
