@@ -1,3 +1,7 @@
+mod bring_up;
+mod error;
+
+use bring_up::init_lcd;
 fn main() {
     // It is necessary to call this function once. Otherwise some patches to the runtime
     // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
@@ -6,5 +10,7 @@ fn main() {
     // Bind the log crate to the ESP Logging facilities
     esp_idf_svc::log::EspLogger::initialize_default();
 
-    log::info!("Hello, world!");
+    log::info!("Hello, world From Darwin!");
+    let _ret = init_lcd();
+    loop {}
 }
