@@ -17,4 +17,6 @@ pub enum MyError {
     EspLCDError(#[from] esp_idf_hal::sys::EspError),
     // #[error("Draw target error")]
     // DrawError(#[from] DrawTarget<Color = Rgb565>::Error),
+    // #[error("SlintError")]
+    // SlintError(#[from] slint::PlatformError),
 }

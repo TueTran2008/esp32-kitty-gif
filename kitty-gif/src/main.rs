@@ -1,7 +1,9 @@
 mod bring_up;
 mod error;
+mod ui;
 
-use bring_up::init_lcd;
+use bring_up::{init_lcd, init_window};
+use error::Result;
 fn main() {
     // It is necessary to call this function once. Otherwise some patches to the runtime
     // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
@@ -12,5 +14,7 @@ fn main() {
 
     log::info!("Hello, world From Darwin!");
     let _ret = init_lcd();
-    loop {}
+    init_window();
+
+    // Ok(())
 }
