@@ -1,21 +1,33 @@
 use crate::error::Result;
 use crate::ui::MyPlatform;
-// use esp_idf_hal::delay::Delay;
+use display_interface_spi::SPIInterface;
 use esp_idf_hal::delay::Ets;
-use esp_idf_hal::gpio::PinDriver;
+use esp_idf_hal::gpio::{Gpio16, Gpio17};
 use esp_idf_hal::units::FromValueType;
 use esp_idf_hal::{
     prelude::Peripherals,
     spi::{config::Config, SpiDeviceDriver, SpiDriverConfig},
 };
+use esp_idf_svc::hal::gpio::{Output, PinDriver};
+use esp_idf_svc::hal::spi::{SpiDriver, SPI2};
 use mipidsi::interface::SpiInterface;
 use mipidsi::models::ILI9341Rgb565;
-use mipidsi::Builder;
+use mipidsi::{Builder, Display};
 use slint::platform::software_renderer::MinimalSoftwareWindow;
-use slint::ComponentHandle;
 slint::include_modules!();
+use crate::ui::DisplayWrapper;
+use static_cell::StaticCell;
 
-pub fn init_lcd() -> Result<()> {
+// Statically allocate memory for a `u32`.
+static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
+
+pub type FrontDisplayDriver<'d> = mipidsi::Display<
+    SpiInterface<'d, SpiDeviceDriver<'d, SpiDriver<'d>>, PinDriver<'d, Gpio17, Output>>,
+    ILI9341Rgb565,
+    PinDriver<'d, Gpio16, Output>,
+>;
+
+pub fn init_lcd<'d>() -> Result<FrontDisplayDriver<'d>> {
     let peripherals = Peripherals::take()?;
     let spi = peripherals.spi2;
     let sclk = peripherals.pins.gpio13;
@@ -35,16 +47,19 @@ pub fn init_lcd() -> Result<()> {
         &SpiDriverConfig::new(),
         &config,
     )?;
-    let mut buffer = [0_u8; 512];
+    // let a = [0_u8; 512];
+    let buffer = BUFFER.init([0; 512]);
+    let slice: &'static mut [u8] = buffer;
     let dc = PinDriver::output(peripherals.pins.gpio17)?;
     let rst = PinDriver::output(peripherals.pins.gpio16)?;
     // Define the display interface with no chip select
-    let di = SpiInterface::new(spi_device, dc, &mut buffer);
-    let mut _display = Builder::new(ILI9341Rgb565, di)
+    let di = SpiInterface::new(spi_device, dc, slice);
+    let display = Builder::new(ILI9341Rgb565, di)
         .reset_pin(rst)
         .init(&mut delay)
         .unwrap();
-    Ok(())
+    log::info!("Initialize the SPI il9431");
+    Ok(display)
 }
 
 pub fn init_window() {
@@ -55,8 +70,16 @@ pub fn init_window() {
     // Make sure the window covers our entire screen.
     window.set_size(slint::PhysicalSize::new(320, 240));
     let app_window = AppWindow::new().unwrap();
+    let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 240];
+    let mut display = init_lcd().unwrap();
+    // let mut display = hal::Display::new(/*...*/);
     loop {
-        slint::platform::update_timers_and_animations();
+        window.draw_if_needed(|renderer| {
+            renderer.render_by_line(DisplayWrapper {
+                display: &mut display,
+                line_buffer: &mut line_buffer,
+            });
+        });
     }
     // ui.on_request_increase_value({
     //     let ui_handle = ui.as_weak();

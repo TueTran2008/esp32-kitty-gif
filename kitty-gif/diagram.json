@@ -15,30 +15,8 @@
       "id": "lcd1",
       "top": -348.99,
       "left": -375.2,
-      "rotate": 270,
-      "attrs": { "flipVertical": "1" }
-    },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn1",
-      "top": -258.77,
-      "left": -553.08,
-      "attrs": { "color": "yellow", "bounce": "1" }
-    },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn2",
-      "top": -182.69,
-      "left": -552.83,
-      "rotate": 180,
-      "attrs": { "color": "blue" }
-    },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn3",
-      "top": -389.75,
-      "left": -331.23,
-      "attrs": { "color": "green" }
+      "rotate": 0,
+      "attrs": { "flipVertical": "0" }
     }
   ],
   "connections": [
@@ -51,18 +29,7 @@
     [ "esp:13", "lcd1:SCK", "blue", [ "h39.74", "v-150.63", "h-211.92", "v-1.93" ] ],
     [ "esp:4", "lcd1:LED", "magenta", [ "v-0.39", "h52.29", "v-184.89", "h-216.27", "v149.17" ] ],
     [ "esp:GND", "lcd1:GND", "black", [ "v-0.77", "h-35.66", "v130" ] ],
-    [ "esp:3V3", "lcd1:VCC", "limegreen", [ "h-28.99", "v115.64" ] ],
-    [ "btn1:1.r", "esp:GND.2", "red", [ "v-80.9", "h435.57" ] ],
-    [
-      "btn1:2.r",
-      "esp:0",
-      "cyan",
-      [ "h11.31", "v-83.23", "h170.71", "v-0.21", "h240.01", "v101.48" ]
-    ],
-    [ "btn2:1.r", "btn1:1.l", "red", [ "h-88.94", "v-77.41" ] ],
-    [ "esp:1", "btn2:2.r", "green", [ "h-20.26", "v111.79", "h-496", "v-82" ] ],
-    [ "btn3:1.r", "esp:8", "yellow", [ "v-12.41", "h375.46", "v151.81" ] ],
-    [ "btn2:1.l", "btn3:2.l", "red", [ "h29.72", "v-216.06" ] ]
+    [ "esp:3V3", "lcd1:VCC", "limegreen", [ "h-28.99", "v115.64" ] ]
   ],
   "serialMonitor": { "display": "terminal" },
   "dependencies": {}

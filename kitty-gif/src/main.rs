@@ -13,7 +13,7 @@ fn main() {
     esp_idf_svc::log::EspLogger::initialize_default();
 
     log::info!("Hello, world From Darwin!");
-    let _ret = init_lcd();
+    // let _ret = init_lcd();
     init_window();
 
     // Ok(())
