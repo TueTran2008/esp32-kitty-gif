@@ -16,6 +16,7 @@ use mipidsi::{Builder, Display};
 use slint::platform::software_renderer::MinimalSoftwareWindow;
 slint::include_modules!();
 use crate::ui::DisplayWrapper;
+use mipidsi::options::{ColorOrder, Orientation};
 use static_cell::StaticCell;
 
 // Statically allocate memory for a `u32`.
@@ -54,10 +55,13 @@ pub fn init_lcd<'d>() -> Result<FrontDisplayDriver<'d>> {
     let rst = PinDriver::output(peripherals.pins.gpio16)?;
     // Define the display interface with no chip select
     let di = SpiInterface::new(spi_device, dc, slice);
-    let display = Builder::new(ILI9341Rgb565, di)
+    let mut display = Builder::new(ILI9341Rgb565, di)
         .reset_pin(rst)
         .init(&mut delay)
         .unwrap();
+    // Flip display content horizontally.
+    let flipped = Orientation::new().flip_horizontal();
+    let _ = display.set_orientation(flipped).unwrap();
     log::info!("Initialize the SPI il9431");
     Ok(display)
 }
@@ -68,9 +72,9 @@ pub fn init_window() {
         window: window.clone(),
     }));
     // Make sure the window covers our entire screen.
-    window.set_size(slint::PhysicalSize::new(320, 240));
+    window.set_size(slint::PhysicalSize::new(240, 320));
     let app_window = AppWindow::new().unwrap();
-    let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 240];
+    let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 320];
     let mut display = init_lcd().unwrap();
     // let mut display = hal::Display::new(/*...*/);
     loop {

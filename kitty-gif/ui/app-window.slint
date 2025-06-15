@@ -2,17 +2,24 @@ import { Button, VerticalBox } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
     in-out property <int> counter: 42;
+    default-font-size: 0px;
     callback request-increase-value();
     VerticalBox {
         Text {
             text: "Counter: \{root.counter}";
+            color: green;
         }
 
-        Button {
-            text: "Increase value";
-            clicked => {
-                root.request-increase-value();
-            }
-        }
+        // Button {
+        //     text: "Increase value";
+        //     clicked => {
+        //         root.request-increase-value();
+        //     }
+        // }
+        // Image {
+        //     source: @image-url("assets/cat_1.gif");
+        // }
     }
+    preferred-height: 320px;
+    preferred-width: 240px;
 }

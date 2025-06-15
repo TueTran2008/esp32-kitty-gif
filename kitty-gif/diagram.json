@@ -15,8 +15,7 @@
       "id": "lcd1",
       "top": -348.99,
       "left": -375.2,
-      "rotate": 0,
-      "attrs": { "flipVertical": "0" }
+      "rotate": 0
     }
   ],
   "connections": [
