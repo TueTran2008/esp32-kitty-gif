@@ -16,6 +16,7 @@ use mipidsi::{Builder, Display};
 use slint::platform::software_renderer::MinimalSoftwareWindow;
 slint::include_modules!();
 use crate::ui::DisplayWrapper;
+use image::ImageReader;
 use mipidsi::options::{ColorOrder, Orientation};
 use static_cell::StaticCell;
 
@@ -74,6 +75,10 @@ pub fn init_window() {
     // Make sure the window covers our entire screen.
     window.set_size(slint::PhysicalSize::new(240, 320));
     let app_window = AppWindow::new().unwrap();
+    let img = ImageReader::open("asssets/cat_1.gif")
+        .unwrap()
+        .decode()
+        .unwrap();
     let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 320];
     let mut display = init_lcd().unwrap();
     // let mut display = hal::Display::new(/*...*/);

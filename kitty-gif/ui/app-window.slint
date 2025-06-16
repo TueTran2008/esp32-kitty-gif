@@ -1,5 +1,8 @@
 import { Button, VerticalBox } from "std-widgets.slint";
 
+export global ImageLoader {
+    pure callback load_gif_frame(string, int) -> image;
+}
 export component AppWindow inherits Window {
     in-out property <int> counter: 42;
     default-font-size: 0px;
@@ -9,17 +12,14 @@ export component AppWindow inherits Window {
             text: "Counter: \{root.counter}";
             color: green;
         }
+        
+        Image {
+            image-fit: ImageFit.cover;
+            source: ImageLoader.load_gif_frame("asssets/cat_1.gif", animation-tick() / 1ms);
+        }
 
-        // Button {
-        //     text: "Increase value";
-        //     clicked => {
-        //         root.request-increase-value();
-        //     }
-        // }
-        // Image {
-        //     source: @image-url("assets/cat_1.gif");
-        // }
     }
     preferred-height: 320px;
     preferred-width: 240px;
+    
 }
