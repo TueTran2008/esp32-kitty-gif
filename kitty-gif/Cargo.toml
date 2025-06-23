@@ -25,7 +25,7 @@ experimental = ["esp-idf-svc/experimental"]
 [dependencies]
 log = "0.4"
 esp-idf-svc = { version = "0.51", features = ["critical-section", "embassy-time-driver", "embassy-sync"] }
-slint = { version = "1.8.0", default-features = false , features = ["compat-1-2", "unsafe-single-threaded", "libm", "renderer-software"]}
+slint = { version = "1.8.0", default-features = false , features = ["compat-1-2", "unsafe-single-threaded", "libm", "renderer-software", "image-default-formats", "log"]}
 mipidsi = { version = "0.9.0"}
 ili9341 = "0.6.0"
 esp-idf-hal = { version = "0.45.2"}
@@ -38,3 +38,9 @@ image = "0.25.6"
 [build-dependencies]
 embuild = "0.33"
 slint-build = "1.8.0"
+gif = "0.13.3"
+
+[env]
+ESP_IDF_SDKCONFIG_DEFAULTS = { value = "sdkconfig.defaults", relative = true }
+ESP_IDF_PARTITION_TABLE = { value = "partitions.csv", relative = true }
+

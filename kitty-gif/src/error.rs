@@ -1,4 +1,4 @@
-use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget};
+// use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget};
 use thiserror::Error;
 
 pub type Result<T> = core::result::Result<T, MyError>;

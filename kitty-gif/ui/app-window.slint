@@ -1,23 +1,49 @@
 import { Button, VerticalBox } from "std-widgets.slint";
 
 export global ImageLoader {
-    pure callback load_gif_frame(string, int) -> image;
+    pure callback load_gif_frame(string);
 }
 export component AppWindow inherits Window {
-    in-out property <int> counter: 42;
-    default-font-size: 0px;
-    callback request-increase-value();
-    VerticalBox {
-        Text {
-            text: "Counter: \{root.counter}";
-            color: green;
-        }
+    in property <image> current_frame;
+    in property <string> status_text: "Ready";
+    in property <int> frame_number: 0;
+    in property <int> total_frames: 0;
+    
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        //background: #000000;
         
         Image {
-            image-fit: ImageFit.cover;
-            source: ImageLoader.load_gif_frame("asssets/cat_1.gif", animation-tick() / 1ms);
+            source: current_frame;
+            width: 160px;
+            height: 160px;
+            image-fit: contain;
         }
-
+        
+        // Status overlay
+        Rectangle {
+            width: 100%;
+            height: 30px;
+            background: #000000AA;
+            y: 0px;
+            
+            Text {
+                text: status_text;
+                color: white;
+                font-size: 10px;
+                x: 5px;
+                y: 2px;
+            }
+            
+            Text {
+                text: "Frame: " + frame_number + "/" + total_frames;
+                color: white;
+                font-size: 10px;
+                x: 5px;
+                y: 15px;
+            }
+        }
     }
     preferred-height: 320px;
     preferred-width: 240px;
