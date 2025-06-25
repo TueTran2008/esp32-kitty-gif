@@ -1,5 +1,6 @@
 use embedded_graphics::{pixelcolor::raw::RawU16, prelude::*, primitives::Rectangle};
 use esp_idf_svc::systime::EspSystemTime;
+use log::info;
 use slint::platform::{software_renderer::MinimalSoftwareWindow, Platform};
 use std::rc::Rc;
 pub struct MyPlatform {

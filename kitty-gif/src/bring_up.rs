@@ -27,6 +27,7 @@ use static_cell::StaticCell;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
+use esp_idf_svc::hal::sys;
 // include!("frame_0.rs");
 // include!(concat!(env!(""), "/frame.rs"));
 // Statically allocate memory for a `u32`.
@@ -99,7 +100,7 @@ impl AnimationController {
     fn start(&mut self) {
         self.is_playing = true;
         self.last_frame_time = Instant::now();
-        println!("Start animation controller");
+        //println!("Start animation controller");
     }
 
     fn stop(&mut self) {
@@ -190,7 +191,7 @@ fn create_slint_image_from_frame(frame: &FrameData) -> Image {
 // }
 
 pub fn init_window() {
-    let window = MinimalSoftwareWindow::new(Default::default());
+    let window = MinimalSoftwareWindow::new(slint::platform::software_renderer::RepaintBufferType::ReusedBuffer);
     slint::platform::set_platform(Box::new(MyPlatform {
         window: window.clone(),
     }))
@@ -199,7 +200,7 @@ pub fn init_window() {
     window.set_size(slint::PhysicalSize::new(240, 320));
     let app = AppWindow::new().unwrap();
 
-    let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 320];
+    let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 240];
     let mut display = init_lcd().unwrap();
     // Create animation controller with pre-processed frames
     let controller = Rc::new(RefCell::new(AnimationController::new(&ANIMATION_FRAMES)));
@@ -218,46 +219,50 @@ pub fn init_window() {
     let controller_clone = controller.clone();
     let app_weak = app.as_weak();
 
-    // let timer = slint::Timer::default();
-    // timer.start(
-    //     slint::TimerMode::Repeated,
-    //     Duration::from_millis(16),
-    //     move || {
-    //         let app = match app_weak.upgrade() {
-    //             Some(app) => {
-    //                 println!("Something is in my mind");
-    //                 app
-    //             }
+    let timer = slint::Timer::default();
+    timer.start(
+        slint::TimerMode::Repeated,
+        Duration::from_millis(16),
+        move || {
+            let app = match app_weak.upgrade() {
+                Some(app) => {
+                    //inf("Something is in my mind");
+                    app
+                }
 
-    //             None => return,
-    //         };
+                None => return,
+            };
 
-    //         let mut ctrl = controller_clone.borrow_mut();
-    //         if let Some(frame) = ctrl.update() {
-    //             println!("update frame");
-    //             let image = create_slint_image_from_frame(frame);
-    //             app.set_current_frame(image);
-    //             app.set_frame_number((ctrl.get_current_frame_index() + 1) as i32);
-    //         }
-    //     },
-    // );
-    let app = app_weak.upgrade().unwrap();
-    let mut ctrl = controller_clone.borrow_mut();
-    if let Some(frame) = ctrl.update() {
-        println!("update frame");
-        let image = create_slint_image_from_frame(frame);
-        app.set_current_frame(image);
-        app.set_frame_number((ctrl.get_current_frame_index() + 1) as i32);
-    }
+            let mut ctrl = controller_clone.borrow_mut();
+            if let Some(frame) = ctrl.update() {
+                //let stats: esp_alloc::HeapStats = esp_alloc::HEAP.stats();
+                //log::info!("{}", stats);
+                //println!("Free heap: {} bytes", esp_idf_svc::hal::sys::esp_get_free_internal_heap_size());
+                let image = create_slint_image_from_frame(frame);
+                app.set_current_frame(image);
+                //log::info!("update frame {}", ctrl.get_current_frame_index());
+                //app.set_frame_number((ctrl.get_current_frame_index()) as i32);
+            }
+        },
+    );
+    // let app = app_weak.upgrade().unwrap();
+    // let mut ctrl = controller_clone.borrow_mut();
+    // if let Some(frame) = ctrl.update() {
+    //     println!("update frame");
+    //     let image = create_slint_image_from_frame(frame);
+    //     app.set_current_frame(image);
+    //     app.set_frame_number((ctrl.get_current_frame_index() + 1) as i32);
+    // }
     // Memory usage info
     let total_memory = ANIMATION_FRAMES.len() * 160 * 160 * 2; // RGB565 = 2 bytes per pixel
     println!("Total animation memory usage: {} KB", total_memory / 1024);
     loop {
-        window.draw_if_needed(|renderer| {
-            renderer.render_by_line(DisplayWrapper {
-                display: &mut display,
-                line_buffer: &mut line_buffer,
-            });
-        });
+        slint::platform::update_timers_and_animations();
+        // window.draw_if_needed(|renderer| {
+        //     renderer.render_by_line(DisplayWrapper {
+        //         display: &mut display,
+        //         line_buffer: &mut line_buffer,
+        //     });
+        // });
     }
 }
