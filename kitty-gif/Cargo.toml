@@ -34,7 +34,6 @@ thiserror = "2.0.12"
 embedded-graphics = "0.8.0"
 static_cell = "2.1.0"
 image = "0.25.6"
-esp-alloc = "0.8.0"
 
 [build-dependencies]
 embuild = "0.33"

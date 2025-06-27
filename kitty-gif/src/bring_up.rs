@@ -1,10 +1,12 @@
 use std::path::Path;
 use std::slice::SliceIndex;
+use std::thread;
 
 use crate::error::Result;
 use crate::ui::MyPlatform;
-use esp_idf_hal::delay::Ets;
-use esp_idf_hal::gpio::{Gpio16, Gpio17};
+use esp_idf_hal::delay::{self, Ets, FreeRtos};
+use esp_idf_hal::gpio::{Gpio16, Gpio39, Gpio41, Gpio5};
+use esp_idf_hal::sys::xPortGetFreeHeapSize;
 use esp_idf_hal::units::FromValueType;
 use esp_idf_hal::{
     prelude::Peripherals,
@@ -14,12 +16,12 @@ use esp_idf_svc::hal::gpio::{Output, PinDriver};
 use esp_idf_svc::hal::spi::SpiDriver;
 use image::{ImageBuffer, Rgba};
 use mipidsi::interface::SpiInterface;
-use mipidsi::models::ILI9341Rgb565;
+use mipidsi::models::{ILI9341Rgb565, ST7789};
 use mipidsi::Builder;
 use slint::platform::software_renderer::{MinimalSoftwareWindow, Rgb565Pixel};
 slint::include_modules!();
 use crate::ui::DisplayWrapper;
-use mipidsi::options::Orientation;
+use mipidsi::options::{ColorInversion, ColorOrder, Orientation};
 use slint::{Image, Rgba8Pixel, SharedPixelBuffer};
 // use slint::SharedPixelBuffer::R
 // use crate::FrameData;
@@ -36,18 +38,18 @@ include!("generated_frames.rs");
 static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
 
 pub type FrontDisplayDriver<'d> = mipidsi::Display<
-    SpiInterface<'d, SpiDeviceDriver<'d, SpiDriver<'d>>, PinDriver<'d, Gpio17, Output>>,
-    ILI9341Rgb565,
-    PinDriver<'d, Gpio16, Output>,
+    SpiInterface<'d, SpiDeviceDriver<'d, SpiDriver<'d>>, PinDriver<'d, Gpio41, Output>>,
+    ST7789,
+    PinDriver<'d, Gpio39, Output>,
 >;
 
-pub fn init_lcd<'d>() -> Result<FrontDisplayDriver<'d>> {
+pub fn init_lcd<'d>() -> Result<(FrontDisplayDriver<'d>, PinDriver<'d, Gpio5, Output>)> {
     let peripherals = Peripherals::take()?;
     let spi = peripherals.spi2;
-    let sclk = peripherals.pins.gpio13;
-    let mosi = peripherals.pins.gpio5;
-    let miso = peripherals.pins.gpio12;
-    let cs = peripherals.pins.gpio2;
+    let sclk = peripherals.pins.gpio40;
+    let mosi = peripherals.pins.gpio45;
+    let miso = peripherals.pins.gpio46;
+    let cs = peripherals.pins.gpio42;
     let config = Config::new().baudrate(26.MHz().into());
     // Define the delay struct, needed for the display driver
     let mut delay = Ets;
@@ -64,19 +66,18 @@ pub fn init_lcd<'d>() -> Result<FrontDisplayDriver<'d>> {
     // let a = [0_u8; 512];
     let buffer = BUFFER.init([0; 512]);
     let slice: &'static mut [u8] = buffer;
-    let dc = PinDriver::output(peripherals.pins.gpio17)?;
-    let rst = PinDriver::output(peripherals.pins.gpio16)?;
+    let dc = PinDriver::output(peripherals.pins.gpio41)?;
+    let rst = PinDriver::output(peripherals.pins.gpio39)?;
     // Define the display interface with no chip select
     let di = SpiInterface::new(spi_device, dc, slice);
-    let mut display = Builder::new(ILI9341Rgb565, di)
+    let mut display = Builder::new(ST7789, di)
         .reset_pin(rst)
+        .color_order(ColorOrder::Rgb).invert_colors(ColorInversion::Inverted)
         .init(&mut delay)
         .unwrap();
-    // Flip display content horizontally.
-    let flipped = Orientation::new().flip_horizontal();
-    display.set_orientation(flipped).unwrap();
-    log::info!("Initialize the SPI il9431");
-    Ok(display)
+    log::info!("Initialize the ST7798");
+    let bl = PinDriver::output(peripherals.pins.gpio5)?;
+    Ok((display, bl))
 }
 // Frame data structure
 // Animation controller
@@ -168,28 +169,6 @@ fn create_slint_image_from_frame(frame: &FrameData) -> Image {
     Image::from_rgba8(buffer)
 }
 
-// fn to_slint_image(data: &[u16], width: usize, height: usize) {
-//     // let mut img_buf: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::new(width as u32, height as u32);
-//     //
-//     // for (i, pixel) in img_buf.pixels_mut().enumerate() {
-//     //     let val = data[i];
-//     //     let r5 = ((val >> 11) & 0x1F) as u8;
-//     //     let g6 = ((val >> 5) & 0x3F) as u8;
-//     //     let b5 = (val & 0x1F) as u8;
-//     //
-//     //     let r = (r5 << 3) | (r5 >> 2);
-//     //     let g = (g6 << 2) | (g6 >> 4);
-//     //     let b = (b5 << 3) | (b5 >> 2);
-//     //
-//     //     *pixel = Rgba([r, g, b, 255]);
-//     // }
-//     //
-//     let buffer: SharedPixelBuffer<_> =
-//         SharedPixelBuffer::clone_from_slice(img_buf.as_raw(), width as u32, height as u32);
-//
-//     // Image::from_rgba8(buffer);
-// }
-
 pub fn init_window() {
     let window = MinimalSoftwareWindow::new(slint::platform::software_renderer::RepaintBufferType::ReusedBuffer);
     slint::platform::set_platform(Box::new(MyPlatform {
@@ -209,7 +188,6 @@ pub fn init_window() {
     app.set_total_frames(ANIMATION_FRAMES.len() as i32);
     app.set_status_text("Animation loaded".into());
 
-    // Start animation
     {
         let mut ctrl = controller.borrow_mut();
         ctrl.start();
@@ -218,8 +196,8 @@ pub fn init_window() {
     // Animation timer
     let controller_clone = controller.clone();
     let app_weak = app.as_weak();
-
     let timer = slint::Timer::default();
+    let _ = display.1.set_high();
     timer.start(
         slint::TimerMode::Repeated,
         Duration::from_millis(16),
@@ -235,34 +213,21 @@ pub fn init_window() {
 
             let mut ctrl = controller_clone.borrow_mut();
             if let Some(frame) = ctrl.update() {
-                //let stats: esp_alloc::HeapStats = esp_alloc::HEAP.stats();
-                //log::info!("{}", stats);
-                //println!("Free heap: {} bytes", esp_idf_svc::hal::sys::esp_get_free_internal_heap_size());
                 let image = create_slint_image_from_frame(frame);
                 app.set_current_frame(image);
-                //log::info!("update frame {}", ctrl.get_current_frame_index());
-                //app.set_frame_number((ctrl.get_current_frame_index()) as i32);
             }
         },
     );
-    // let app = app_weak.upgrade().unwrap();
-    // let mut ctrl = controller_clone.borrow_mut();
-    // if let Some(frame) = ctrl.update() {
-    //     println!("update frame");
-    //     let image = create_slint_image_from_frame(frame);
-    //     app.set_current_frame(image);
-    //     app.set_frame_number((ctrl.get_current_frame_index() + 1) as i32);
-    // }
-    // Memory usage info
     let total_memory = ANIMATION_FRAMES.len() * 160 * 160 * 2; // RGB565 = 2 bytes per pixel
     println!("Total animation memory usage: {} KB", total_memory / 1024);
     loop {
         slint::platform::update_timers_and_animations();
-        // window.draw_if_needed(|renderer| {
-        //     renderer.render_by_line(DisplayWrapper {
-        //         display: &mut display,
-        //         line_buffer: &mut line_buffer,
-        //     });
-        // });
+        window.draw_if_needed(|renderer| {
+            renderer.render_by_line(DisplayWrapper {
+                display: &mut display.0,
+                line_buffer: &mut line_buffer,
+            });
+        });
+        FreeRtos::delay_ms(1);
     }
 }
