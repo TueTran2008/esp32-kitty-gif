@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
 
 fn rgba_to_rgb565(rgba_data: &[u8]) -> Vec<u16> {
     let mut rgb565_data = Vec::new();
@@ -24,10 +23,9 @@ fn rgba_to_rgb565(rgba_data: &[u8]) -> Vec<u16> {
 }
 
 fn generate_frame_data() -> Result<(), Box<dyn std::error::Error>> {
-    use gif::{ColorOutput, DecodeOptions};
 
     // Read the GIF file
-    let gif_path = "ui/assets/cat_1_resize.gif";
+    let gif_path = "ui/assets/gif/cat_eating.gif";
 
     let input = File::open(gif_path).unwrap();
 
@@ -105,14 +103,16 @@ fn generate_frame_data() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() {
+    slint_build::compile("ui/home-window.slint").expect("Slint build failed");
+    slint_build::compile("ui/roundprogress.slint").expect("Slint build failed");
+    slint_build::compile("ui/splash-window.slint").expect("Slint build failed");
+    slint_build::compile("ui/app-window.slint").expect("Slint build failed");
     embuild::espidf::sysenv::output();
-    // slint_build::compile("ui/app-window.slint").expect("Slint build failed");
     if let Err(e) = generate_frame_data() {
         println!("cargo:warning=Failed to generate frame data: {}", e);
     }
 
-    // Rebuild if GIF file changes
-    println!("cargo:rerun-if-changed=assets/animation.gif");
+
 
     slint_build::compile_with_config(
         "ui/app-window.slint",

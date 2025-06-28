@@ -1,0 +1,129 @@
+import { Button, VerticalBox, HorizontalBox, ProgressIndicator } from "std-widgets.slint";
+
+import {RoundProgress} from "roundprogress.slint";
+export component Home inherits Window{
+    width: 240px;
+    height: 320px;
+    background: #000000;
+    in property <image> current_frame;
+    Image {
+        y: 61px;
+        x: 43px;
+        source: current_frame;
+        width: 160px;
+        height: 160px;
+    }
+    top-bar := Rectangle {
+        x: 0px;
+        y: 0px;
+        width: 240px;
+        height: 28px;
+        frame-51 := Rectangle {
+            x: 12px;
+            y: 8px;
+            width: 88.5px;
+            height: 12px;
+            signal := Text {
+                x: 16px;
+                y: 3px;
+                text: "02";
+                color: #89dd47;
+                font-family: "Instrument Sans";
+                font-size: 8px;
+                font-weight: 500;
+                horizontal-alignment: center; 
+            }
+        }
+        frame-2 := Rectangle {
+            x: 139.5px;
+            y: 8px;
+            width: 88.5px;
+            height: 12px;
+            battery := Text {
+                x: 72.5px;
+                y: 2px;
+                text: "95%";
+                color: #ffffff;
+                font-family: "Instrument Sans";
+                font-size: 8px;
+                font-weight: 500;
+                horizontal-alignment: center; 
+            }
+        }
+        time := Text {
+            x: 108.5px;
+            y: 10px;
+            text: "09:24";
+            color: #ffffff;
+            font-family: "Instrument Sans";
+            font-size: 8px;
+            font-weight: 500;
+            horizontal-alignment: center; 
+        }
+        frame-7 := Rectangle {
+            x: 8px;
+            y: 36px;
+            width: 224px;
+            height: 227px;
+            border-radius: 16px;
+            border-width: 1px;
+            border-color: #ffffff33;
+            chat_icon := Rectangle {
+                x: 173.4px;
+                y: 176.6px;
+                width: 40px;
+                height: 40px;
+                background: #ffffff1a;
+                border-radius: 63.36px;
+                Image {
+                    source: @image-url("assets/chat-ai-line.svg");
+                }
+            }
+        }
+        frame-10 := Rectangle {
+            x: 0px;
+            y: 263.04px;
+            width: 240px;
+            height: 56.96px;
+            eat := RoundProgress {
+                x: 8px;
+                y: 8.48px;
+                width: 69.333px;
+                height: 40px;
+                inner_color: #f9c22b;
+                value: 100%;
+                Image {
+                    source: @image-url("assets/icon-park-outline_hamburger.svg");
+                }
+            }
+            play := RoundProgress {
+                x: 85.333px;
+                y: 8.48px;
+                width: 69.333px;
+                height: 40px;
+                inner_color: #89dd47;
+                value: 100%;
+                Image {
+                    source: @image-url("assets/icon-park-outline_game-three.svg");
+                }
+            }
+            ring := Rectangle {
+                x: 162.667px;
+                y: 8px;
+                width: 69.333px;
+                height: 40.96px;
+                border-radius: 99px;
+                circle := Rectangle {
+                    x: 19.52px;
+                    y: 5.12px;
+                    width: 30.72px;
+                    height: 30.72px;
+                    border-radius: 126.72px;
+                    border-width: 5.12px;
+                    border-color: @linear-gradient(165deg, #cde800 0%, #efdede 50%, #dee36f 100%);
+                }
+            }
+
+        }
+    }
+}

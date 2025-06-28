@@ -1,0 +1,36 @@
+
+import { ProgressIndicator} from "std-widgets.slint";
+
+export component RoundProgress inherits Window { 
+    in property <color> inner_color;  
+    in property <float> value;
+    Rectangle {
+        rectangle := Rectangle {
+            // The background track
+            x: 0px;
+            y: 0px;
+            width: 69.333px;
+            height: 40px;
+            border-radius: 99px;
+            border-width: 1px;
+            border-color: #ffffff33;
+        }
+
+        fill := Rectangle {
+            indi := ProgressIndicator {
+                progress: value;
+            }
+            x: 0px;
+            y: 0px;
+            // The progress fill
+            border-radius: 99px;
+            border-width: 1px;
+            background: inner_color;
+            width: rectangle.width * indi.progress;
+            height: rectangle.height;
+            border-color: #ffffff33;
+            opacity: 20%;
+        }
+
+    }
+}

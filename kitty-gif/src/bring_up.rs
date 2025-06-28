@@ -1,12 +1,7 @@
-use std::path::Path;
-use std::slice::SliceIndex;
-use std::thread;
-
 use crate::error::Result;
 use crate::ui::MyPlatform;
-use esp_idf_hal::delay::{self, Ets, FreeRtos};
-use esp_idf_hal::gpio::{Gpio16, Gpio39, Gpio41, Gpio5};
-use esp_idf_hal::sys::xPortGetFreeHeapSize;
+use esp_idf_hal::delay::{Ets, FreeRtos};
+use esp_idf_hal::gpio::{Gpio39, Gpio41, Gpio5};
 use esp_idf_hal::units::FromValueType;
 use esp_idf_hal::{
     prelude::Peripherals,
@@ -14,26 +9,18 @@ use esp_idf_hal::{
 };
 use esp_idf_svc::hal::gpio::{Output, PinDriver};
 use esp_idf_svc::hal::spi::SpiDriver;
-use image::{ImageBuffer, Rgba};
 use mipidsi::interface::SpiInterface;
-use mipidsi::models::{ILI9341Rgb565, ST7789};
+use mipidsi::models::{ST7789};
 use mipidsi::Builder;
-use slint::platform::software_renderer::{MinimalSoftwareWindow, Rgb565Pixel};
+use slint::platform::software_renderer::{MinimalSoftwareWindow};
 slint::include_modules!();
 use crate::ui::DisplayWrapper;
-use mipidsi::options::{ColorInversion, ColorOrder, Orientation};
-use slint::{Image, Rgba8Pixel, SharedPixelBuffer};
-// use slint::SharedPixelBuffer::R
-// use crate::FrameData;
+use mipidsi::options::{ColorInversion, ColorOrder};
+use slint::{Image, SharedPixelBuffer};
 use static_cell::StaticCell;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
-use esp_idf_svc::hal::sys;
-// include!("frame_0.rs");
-// include!(concat!(env!(""), "/frame.rs"));
-// Statically allocate memory for a `u32`.
-// Include the generated frame data
 include!("generated_frames.rs");
 static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
 
@@ -70,7 +57,7 @@ pub fn init_lcd<'d>() -> Result<(FrontDisplayDriver<'d>, PinDriver<'d, Gpio5, Ou
     let rst = PinDriver::output(peripherals.pins.gpio39)?;
     // Define the display interface with no chip select
     let di = SpiInterface::new(spi_device, dc, slice);
-    let mut display = Builder::new(ST7789, di)
+    let display = Builder::new(ST7789, di)
         .reset_pin(rst)
         .color_order(ColorOrder::Rgb).invert_colors(ColorInversion::Inverted)
         .init(&mut delay)
@@ -103,7 +90,7 @@ impl AnimationController {
         self.last_frame_time = Instant::now();
         //println!("Start animation controller");
     }
-
+#[warn(dead_code)]
     fn stop(&mut self) {
         self.is_playing = false;
     }
@@ -124,14 +111,6 @@ impl AnimationController {
         }
 
         Some(&self.frames[self.current_frame])
-    }
-
-    fn get_current_frame_index(&self) -> usize {
-        self.current_frame
-    }
-
-    fn get_total_frames(&self) -> usize {
-        self.frames.len()
     }
 }
 
@@ -184,10 +163,6 @@ pub fn init_window() {
     // Create animation controller with pre-processed frames
     let controller = Rc::new(RefCell::new(AnimationController::new(&ANIMATION_FRAMES)));
 
-    // Set initial state
-    app.set_total_frames(ANIMATION_FRAMES.len() as i32);
-    app.set_status_text("Animation loaded".into());
-
     {
         let mut ctrl = controller.borrow_mut();
         ctrl.start();
@@ -204,10 +179,8 @@ pub fn init_window() {
         move || {
             let app = match app_weak.upgrade() {
                 Some(app) => {
-                    //inf("Something is in my mind");
                     app
                 }
-
                 None => return,
             };
 
@@ -221,6 +194,7 @@ pub fn init_window() {
     let total_memory = ANIMATION_FRAMES.len() * 160 * 160 * 2; // RGB565 = 2 bytes per pixel
     println!("Total animation memory usage: {} KB", total_memory / 1024);
     loop {
+
         slint::platform::update_timers_and_animations();
         window.draw_if_needed(|renderer| {
             renderer.render_by_line(DisplayWrapper {
