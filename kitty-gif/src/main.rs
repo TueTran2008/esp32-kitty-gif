@@ -1,6 +1,7 @@
 mod bring_up;
 mod error;
 mod ui;
+mod touch;
 
 use bring_up::init_window;
 // Frame data structure

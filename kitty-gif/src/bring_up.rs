@@ -1,7 +1,13 @@
 use crate::error::Result;
+use std::sync::Mutex;
+use std::thread;
+use crate::touch;
 use crate::ui::MyPlatform;
-use esp_idf_hal::delay::{Ets, FreeRtos};
+use esp_idf_hal::cpu::Core;
+use esp_idf_hal::delay::{Delay, Ets, FreeRtos};
 use esp_idf_hal::gpio::{Gpio39, Gpio41, Gpio5};
+use esp_idf_hal::i2c::{I2cConfig, I2cDriver};
+use esp_idf_hal::task::thread::ThreadSpawnConfiguration;
 use esp_idf_hal::units::FromValueType;
 use esp_idf_hal::{
     prelude::Peripherals,
@@ -21,6 +27,15 @@ use static_cell::StaticCell;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
+////////
+use cst816s::command::{IrqCtl, MotionMask, TouchEvent};
+use cst816s::Cst816s;
+use esp_idf_hal::gpio::{AnyIOPin, OutputPin};
+use esp_idf_hal::task::block_on;
+use esp_idf_hal::{i2c};
+use shared_bus::BusManager;
+use std::sync::{Arc};
+//////////////
 include!("generated_frames.rs");
 static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
 
@@ -29,6 +44,40 @@ pub type FrontDisplayDriver<'d> = mipidsi::Display<
     ST7789,
     PinDriver<'d, Gpio39, Output>,
 >;
+
+pub struct TouchTaskData<'a> {
+    pub shared_cursor: Arc<Mutex<Option<TouchEvent>>>,
+    pub delay: Delay,
+    pub bus: &'a BusManager<Mutex<i2c::I2cDriver<'a>>>,
+    pub int1: AnyIOPin,
+    pub reset: AnyIOPin,
+}
+pub fn setup_touch(
+    touch: &mut Cst816s<shared_bus::I2cProxy<'_, Mutex<i2c::I2cDriver<'_>>>, Delay>,
+){
+    let mut irq_ctl = IrqCtl(0);
+    irq_ctl.set_en_test(false);
+    irq_ctl.set_en_touch(true);
+    irq_ctl.set_en_change(true);
+    irq_ctl.set_en_motion(true);
+    irq_ctl.set_en_once_wlp(true);
+    touch.write_irq_ctl(irq_ctl).unwrap();
+
+    let mut motion_mask = MotionMask(0);
+    motion_mask.set_en_double_click(true);
+    motion_mask.set_en_continuous_left_right(true);
+    motion_mask.set_en_continuous_up_down(true);
+    touch.write_motion_mask(motion_mask).unwrap();
+
+    touch.write_lp_scan_idac(1).unwrap();
+    touch.write_lp_scan_freq(7).unwrap();
+    touch.write_lp_scan_win(3).unwrap();
+    touch.write_lp_scan_th(48).unwrap();
+    touch.write_motion_s1_angle(0).unwrap();
+    touch.write_long_press_time(10).unwrap();
+    touch.write_auto_reset(5).unwrap();
+
+}
 
 pub fn init_lcd<'d>() -> Result<(FrontDisplayDriver<'d>, PinDriver<'d, Gpio5, Output>)> {
     let peripherals = Peripherals::take()?;
@@ -64,6 +113,52 @@ pub fn init_lcd<'d>() -> Result<(FrontDisplayDriver<'d>, PinDriver<'d, Gpio5, Ou
         .unwrap();
     log::info!("Initialize the ST7798");
     let bl = PinDriver::output(peripherals.pins.gpio5)?;
+
+    /////////////////////////////////// Touch peripheral init
+    let mut touch_int = PinDriver::input(peripherals.pins.gpio4).unwrap();
+    let mut touch_rst = PinDriver::output(peripherals.pins.gpio2).unwrap();
+    let touch_sda_pin = peripherals.pins.gpio1;
+    let touch_scl_pin = peripherals.pins.gpio3;
+    let touch_i2c_config = I2cConfig::new().baudrate(400.kHz().into());
+    let i2c = peripherals.i2c0;
+    let mut touch_i2c = I2cDriver::new(i2c, touch_sda_pin, touch_scl_pin, &touch_i2c_config).unwrap();
+    let mut delay_source:Delay = Default::default();
+    let bus: &'static shared_bus::BusManager<Mutex<i2c::I2cDriver<'_>>> = shared_bus::new_std!(i2c::I2cDriver = touch_i2c).unwrap();
+
+    let mut touch = Cst816s::new(bus.acquire_i2c(), delay_source);
+    touch.reset(&mut touch_rst, &mut delay_source).unwrap();
+
+    setup_touch(&mut touch);
+
+    touch.dump_register();
+
+    ThreadSpawnConfiguration {
+        name: Some(b"touch\0"),
+        stack_size: 16000, // only the Builder::new().stack_size is real
+        priority: 10,
+        pin_to_core: Some(Core::Core0),
+        ..Default::default()
+    };
+    let _thread_3 = std::thread::Builder::new()
+    .stack_size(16000).spawn(move || {
+        loop {
+            //let result = block_on(touch_int.wait_for_rising_edge());
+
+            let event = touch.read_events();
+            log::info!("{:?}",event);
+    
+            // if let Ok(event) = event {
+            //     let mut value = data.shared_cursor.lock().unwrap();
+            //     *value = Some(event.points[0]);
+            // }
+    
+            // if result.is_ok() {
+            // } else if let Err(err) = result {
+            //     log::error!("waiting on interupt error: {}", err)
+            // }
+            FreeRtos::delay_ms(1000);
+        }
+    });
     Ok((display, bl))
 }
 // Frame data structure
@@ -202,6 +297,6 @@ pub fn init_window() {
                 line_buffer: &mut line_buffer,
             });
         });
-        FreeRtos::delay_ms(1);
+        FreeRtos::delay_ms(100);
     }
 }
