@@ -28,8 +28,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 ////////
-use cst816s::command::{IrqCtl, MotionMask, TouchEvent};
-use cst816s::Cst816s;
+use cst816s::Cst328;
 use esp_idf_hal::gpio::{AnyIOPin, OutputPin};
 use esp_idf_hal::task::block_on;
 use esp_idf_hal::{i2c};
@@ -45,39 +44,39 @@ pub type FrontDisplayDriver<'d> = mipidsi::Display<
     PinDriver<'d, Gpio39, Output>,
 >;
 
-pub struct TouchTaskData<'a> {
-    pub shared_cursor: Arc<Mutex<Option<TouchEvent>>>,
-    pub delay: Delay,
-    pub bus: &'a BusManager<Mutex<i2c::I2cDriver<'a>>>,
-    pub int1: AnyIOPin,
-    pub reset: AnyIOPin,
-}
-pub fn setup_touch(
-    touch: &mut Cst816s<shared_bus::I2cProxy<'_, Mutex<i2c::I2cDriver<'_>>>, Delay>,
-){
-    let mut irq_ctl = IrqCtl(0);
-    irq_ctl.set_en_test(false);
-    irq_ctl.set_en_touch(true);
-    irq_ctl.set_en_change(true);
-    irq_ctl.set_en_motion(true);
-    irq_ctl.set_en_once_wlp(true);
-    touch.write_irq_ctl(irq_ctl).unwrap();
+// pub struct TouchTaskData<'a> {
+//     pub shared_cursor: Arc<Mutex<Option<TouchEvent>>>,
+//     pub delay: Delay,
+//     pub bus: &'a BusManager<Mutex<i2c::I2cDriver<'a>>>,
+//     pub int1: AnyIOPin,
+//     pub reset: AnyIOPin,
+// }
+// pub fn setup_touch(
+//     touch: &mut Cst816s<shared_bus::I2cProxy<'_, Mutex<i2c::I2cDriver<'_>>>, Delay>,
+// ){
+//     let mut irq_ctl = IrqCtl(0);
+//     irq_ctl.set_en_test(false);
+//     irq_ctl.set_en_touch(true);
+//     irq_ctl.set_en_change(true);
+//     irq_ctl.set_en_motion(true);
+//     irq_ctl.set_en_once_wlp(true);
+//     touch.write_irq_ctl(irq_ctl).unwrap();
 
-    let mut motion_mask = MotionMask(0);
-    motion_mask.set_en_double_click(true);
-    motion_mask.set_en_continuous_left_right(true);
-    motion_mask.set_en_continuous_up_down(true);
-    touch.write_motion_mask(motion_mask).unwrap();
+//     let mut motion_mask = MotionMask(0);
+//     motion_mask.set_en_double_click(true);
+//     motion_mask.set_en_continuous_left_right(true);
+//     motion_mask.set_en_continuous_up_down(true);
+//     touch.write_motion_mask(motion_mask).unwrap();
 
-    touch.write_lp_scan_idac(1).unwrap();
-    touch.write_lp_scan_freq(7).unwrap();
-    touch.write_lp_scan_win(3).unwrap();
-    touch.write_lp_scan_th(48).unwrap();
-    touch.write_motion_s1_angle(0).unwrap();
-    touch.write_long_press_time(10).unwrap();
-    touch.write_auto_reset(5).unwrap();
+//     touch.write_lp_scan_idac(1).unwrap();
+//     touch.write_lp_scan_freq(7).unwrap();
+//     touch.write_lp_scan_win(3).unwrap();
+//     touch.write_lp_scan_th(48).unwrap();
+//     touch.write_motion_s1_angle(0).unwrap();
+//     touch.write_long_press_time(10).unwrap();
+//     touch.write_auto_reset(5).unwrap();
 
-}
+// }
 
 pub fn init_lcd<'d>() -> Result<(FrontDisplayDriver<'d>, PinDriver<'d, Gpio5, Output>)> {
     let peripherals = Peripherals::take()?;
@@ -125,12 +124,10 @@ pub fn init_lcd<'d>() -> Result<(FrontDisplayDriver<'d>, PinDriver<'d, Gpio5, Ou
     let mut delay_source:Delay = Default::default();
     let bus: &'static shared_bus::BusManager<Mutex<i2c::I2cDriver<'_>>> = shared_bus::new_std!(i2c::I2cDriver = touch_i2c).unwrap();
 
-    let mut touch = Cst816s::new(bus.acquire_i2c(), delay_source);
+    let mut touch = Cst328::new(bus.acquire_i2c(), delay_source);
     touch.reset(&mut touch_rst, &mut delay_source).unwrap();
 
-    setup_touch(&mut touch);
-
-    touch.dump_register();
+   //setup_touch(&mut touch);
 
     ThreadSpawnConfiguration {
         name: Some(b"touch\0"),
@@ -144,8 +141,8 @@ pub fn init_lcd<'d>() -> Result<(FrontDisplayDriver<'d>, PinDriver<'d, Gpio5, Ou
         loop {
             //let result = block_on(touch_int.wait_for_rising_edge());
 
-            let event = touch.read_events();
-            log::info!("{:?}",event);
+            let event = touch.get_xy_data().unwrap();
+            log::info!("number {:?}",event);
     
             // if let Ok(event) = event {
             //     let mut value = data.shared_cursor.lock().unwrap();
