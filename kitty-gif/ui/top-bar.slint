@@ -1,0 +1,78 @@
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+export component TopBar {
+    top-bar := Rectangle {
+        x: 0px;
+        y: 0px;
+        width: 240px;
+        height: 36px;
+        in property <string> time;
+        frame-51 := Rectangle {
+            x: 12px;
+            y: 12px;
+            width: 86px;
+            height: 12px;
+            signal-wifi-2-fill := Image {
+                x: 0;
+                y: 0;
+                source: @image-url("assets/wifi.svg");
+            }
+            frame-2 := Rectangle {
+                x: 20px;
+                y: 0px;
+                width: 26px;
+                height: 12px;
+                in property <string> mm_signal;
+                mind-map := Image {
+                    x: 0px;
+                    y: 0px;
+                    source: @image-url("assets/mind-map.svg");
+                }
+                _02 := Text {
+                    x: 14px;
+                    y: 1px;
+                    text: mm_signal;
+                    color: #89dd47;
+                    font-family: "Roboto Mono";
+                    font-size: 9px;
+                    font-weight: 500;
+                    horizontal-alignment: center; 
+                }
+                mm_signal: "02";
+            }
+        }
+        time_text := Text {
+            x: 106px;
+            y: 13.5px;
+            text: time;
+            color: #ffffff;
+            font-family: "Roboto Mono";
+            font-size: 9px;
+            font-weight: 500;
+            horizontal-alignment: center; 
+        }
+        time: "09:24";
+        frame-left := Rectangle {
+            x: 142px;
+            y: 12px;
+            width: 86px;
+            height: 12px;
+            in property <string> battery_percent;
+            battery-fill := Image {
+                x: 48.44px;
+                y: 0px;
+                source: @image-url("assets/battery-fill.svg");
+            }
+            battery_text := Text {
+                x: 63px;
+                y: 1px;
+                text: battery_percent;
+                color: #ffffff;
+                font-family: "Roboto Mono";
+                font-size: 9px;
+                font-weight: 500;
+                horizontal-alignment: center; 
+            }
+            battery_percent: "100%";
+        }
+    }
+}

@@ -1,5 +1,6 @@
-use std::fs::File;
-use std::io::Write;
+use std::fs::{self, File};
+use std::io::{Write, BufWriter};
+use std::path::Path;
 
 fn rgba_to_rgb565(rgba_data: &[u8]) -> Vec<u16> {
     let mut rgb565_data = Vec::new();
@@ -22,83 +23,83 @@ fn rgba_to_rgb565(rgba_data: &[u8]) -> Vec<u16> {
     rgb565_data
 }
 
-fn generate_frame_data() -> Result<(), Box<dyn std::error::Error>> {
+pub fn generate_all_frames() -> Result<(), Box<dyn std::error::Error>> {
+    let gif_folder = Path::new("ui/assets/gif");
 
-    // Read the GIF file
-    let gif_path = "ui/assets/gif/cat_eating.gif";
+    for entry in fs::read_dir(gif_folder)? {
+        let entry = entry?;
+        let path = entry.path();
 
-    let input = File::open(gif_path).unwrap();
+        if path.is_file() && path.extension().map_or(false, |ext| ext == "gif") {
+            let file_stem = path.file_stem().unwrap().to_str().unwrap().to_lowercase();
+            let out_path = format!("src/{}_frames.rs", file_stem);
+            println!("Processing {:?}", path);
 
-    let mut decoder = gif::DecodeOptions::new();
-    decoder.set_color_output(gif::ColorOutput::RGBA);
+            let input = File::open(&path)?;
+            let mut decoder = gif::DecodeOptions::new();
+            decoder.set_color_output(gif::ColorOutput::RGBA);
+            let mut reader = decoder.read_info(input)?;
 
-    let mut reader = decoder.read_info(input).unwrap();
+            let mut output = BufWriter::new(File::create(&out_path)?);
 
-    let mut output = File::create("src/generated_frames.rs")?;
+            writeln!(output, "// Auto-generated from {:?}", path)?;
+            writeln!(output, "use crate::FrameData;\n")?;
 
-    // Write the header
-    writeln!(output, "// Auto-generated frame data from GIF")?;
-    writeln!(output, "use crate::FrameData;")?;
-    writeln!(output, "")?;
+            let mut frames = Vec::new();
+            let mut frame_index = 0;
 
-    let mut frames = Vec::new();
-    let mut frame_index = 0;
+            while let Some(frame) = reader.read_next_frame()? {
+                let delay_ms = frame.delay as u32 * 10;
+                let rgb565_data = rgba_to_rgb565(&frame.buffer);
 
-    // Process each frame
-    while let Some(frame) = reader.read_next_frame()? {
-        let delay_ms = frame.delay as u32 * 10; // Convert to milliseconds
+                writeln!(
+                    output,
+                    "const FRAME_{}_DATA: [u16; {}] = [",
+                    frame_index,
+                    rgb565_data.len()
+                )?;
 
-        // Convert to RGB565 format to save memory (2 bytes per pixel instead of 4)
-        let rgb565_data = rgba_to_rgb565(&frame.buffer);
+                for (i, pixel) in rgb565_data.iter().enumerate() {
+                    if i % 16 == 0 {
+                        write!(output, "    ")?;
+                    }
+                    write!(output, "0x{:04X}", pixel)?;
+                    if i < rgb565_data.len() - 1 {
+                        write!(output, ", ")?;
+                    }
+                    if (i + 1) % 16 == 0 {
+                        writeln!(output)?;
+                    }
+                }
+                if rgb565_data.len() % 16 != 0 {
+                    writeln!(output)?;
+                }
+                writeln!(output, "];\n")?;
 
-        writeln!(
-            output,
-            "const FRAME_{}_DATA: [u16; {}] = [",
-            frame_index,
-            rgb565_data.len()
-        )?;
-
-        // Write data in chunks of 16 for readability
-        for (i, pixel) in rgb565_data.iter().enumerate() {
-            if i % 16 == 0 {
-                write!(output, "    ")?;
+                frames.push((frame_index, delay_ms, frame.width, frame.height));
+                frame_index += 1;
             }
-            write!(output, "0x{:04X}", pixel)?;
-            if i < rgb565_data.len() - 1 {
-                write!(output, ", ")?;
+
+            writeln!(
+                output,
+                "pub const {}_FRAMES: [FrameData; {}] = [",
+                file_stem.to_uppercase(),
+                frames.len()
+            )?;
+            for (index, delay, width, height) in &frames {
+                writeln!(output, "    FrameData {{")?;
+                writeln!(output, "        data: &FRAME_{}_DATA,", index)?;
+                writeln!(output, "        delay_ms: {},", delay)?;
+                writeln!(output, "        width: {},", width)?;
+                writeln!(output, "        height: {},", height)?;
+                writeln!(output, "    }},")?;
             }
-            if (i + 1) % 16 == 0 {
-                writeln!(output)?;
-            }
+            writeln!(output, "];\n")?;
+
+            println!("Generated {} frames for {:?}", frames.len(), file_stem);
         }
-
-        if rgb565_data.len() % 16 != 0 {
-            writeln!(output)?;
-        }
-        writeln!(output, "];")?;
-        writeln!(output)?;
-
-        frames.push((frame_index, delay_ms, frame.width, frame.height));
-        frame_index += 1;
     }
 
-    // Generate the frame array
-    writeln!(
-        output,
-        "pub const ANIMATION_FRAMES: [FrameData; {}] = [",
-        frames.len()
-    )?;
-    for (index, delay, width, height) in &frames {
-        writeln!(output, "    FrameData {{")?;
-        writeln!(output, "        data: &FRAME_{}_DATA,", index)?;
-        writeln!(output, "        delay_ms: {},", delay)?;
-        writeln!(output, "        width: {},", width)?;
-        writeln!(output, "        height: {},", height)?;
-        writeln!(output, "    }},")?;
-    }
-    writeln!(output, "];")?;
-
-    println!("Generated {} frames", frames.len());
     Ok(())
 }
 
@@ -108,7 +109,7 @@ fn main() {
     slint_build::compile("ui/splash-window.slint").expect("Slint build failed");
     slint_build::compile("ui/app-window.slint").expect("Slint build failed");
     embuild::espidf::sysenv::output();
-    if let Err(e) = generate_frame_data() {
+    if let Err(e) = generate_all_frames() {
         println!("cargo:warning=Failed to generate frame data: {}", e);
     }
 

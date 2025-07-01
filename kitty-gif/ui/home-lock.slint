@@ -1,0 +1,81 @@
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { TopBar } from "top-bar.slint";
+export component HomeLock inherits Window {
+    preferred-height: 320px;
+    preferred-width: 240px;
+    background: #000000;
+    in property <string> time;
+    TopBar{
+        x: 0;
+        y: 0;
+    }
+    frame-5 := Rectangle {
+        x: 12.8px;
+        y: 59.52px;
+        width: 214.4px;
+        height: 40px;
+        time_big_text := Text {
+            x: 40.32px;
+            text: "09:24";
+            color: #ffffff;
+            font-family: "Roboto Mono";
+            font-size: 56px;
+            font-weight: 400;
+            horizontal-alignment: center; 
+        }
+        frame-date-month := Rectangle {
+            x: 0px;
+            y: 0px;
+            width: 25.6px;
+            height: 26.12px;
+            in property <string> week_day;
+            in property <int> day;
+            wd := Text {
+                y: 0;
+                text: week_day;
+                color: #ffffff;
+                font-family: "Instrument Sans";
+                font-size: 10px;
+                font-weight: 400;
+                horizontal-alignment: center; 
+            }
+            week_day: "FRI";
+            day_text := Text {
+                y: 12.12px;
+                text: day;
+                color: #f9c22b;
+                font-family: "Instrument Sans";
+                font-size: 20px;
+                font-weight: 400;
+                horizontal-alignment: center; 
+            }
+            day: 20;
+        }
+    }
+    frame-6 := Rectangle {
+        x: 42.34px;
+        y: 281.6px;
+        width: 154.68px;
+        height: 18px;
+        swipe-up-to-start := Text {
+            text: "Swipe up to start";
+            color: #ededed;
+            font-family: "Roboto Mono";
+            font-size: 12.8px;
+            font-weight: 700;
+            horizontal-alignment: center; 
+        }
+        arrow-up-double-line := Image {
+            x: 139px;
+            y: 1px;
+            source: @image-url("assets/arrow-up-double-line.svg");
+        }
+    }
+    vector := Image {
+        width: 80px;
+        height: 79.36px;
+        x: 80px;
+        y: 144px;
+        source: @image-url("assets/hello_kitty.jpg");
+    }
+}

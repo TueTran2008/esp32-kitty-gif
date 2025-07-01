@@ -1,7 +1,6 @@
 use crate::error::Result;
 use std::sync::Mutex;
 use std::thread;
-use crate::touch;
 use crate::ui::MyPlatform;
 use esp_idf_hal::cpu::Core;
 use esp_idf_hal::delay::{Delay, Ets, FreeRtos};
@@ -34,8 +33,15 @@ use esp_idf_hal::task::block_on;
 use esp_idf_hal::{i2c};
 use shared_bus::BusManager;
 use std::sync::{Arc};
+use crate::FrameData;
+use crate::cat_dance_frames::CAT_DANCE_FRAMES;
+use crate::cat_eating_frames::CAT_EATING_FRAMES;
+use crate::cat_playing_frames::CAT_PLAYING_FRAMES;
 //////////////
-include!("generated_frames.rs");
+// include!("CAT_DANCE_frames.rs");
+// include!("CAT_EATING_frames.rs");
+// include!("CAT_PLAYING_frames.rs");
+
 static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
 
 pub type FrontDisplayDriver<'d> = mipidsi::Display<
@@ -252,39 +258,40 @@ pub fn init_window() {
 
     let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 240];
     let mut display = init_lcd().unwrap();
-    // Create animation controller with pre-processed frames
-    let controller = Rc::new(RefCell::new(AnimationController::new(&ANIMATION_FRAMES)));
-
-    {
-        let mut ctrl = controller.borrow_mut();
-        ctrl.start();
-    }
-
-    // Animation timer
-    let controller_clone = controller.clone();
-    let app_weak = app.as_weak();
-    let timer = slint::Timer::default();
     let _ = display.1.set_high();
-    timer.start(
-        slint::TimerMode::Repeated,
-        Duration::from_millis(16),
-        move || {
-            let app = match app_weak.upgrade() {
-                Some(app) => {
-                    app
-                }
-                None => return,
-            };
+    // Create animation controller with pre-processed frames
+    // let controller = Rc::new(RefCell::new(AnimationController::new(&CAT_EATING_FRAMES)));
 
-            let mut ctrl = controller_clone.borrow_mut();
-            if let Some(frame) = ctrl.update() {
-                let image = create_slint_image_from_frame(frame);
-                app.set_current_frame(image);
-            }
-        },
-    );
-    let total_memory = ANIMATION_FRAMES.len() * 160 * 160 * 2; // RGB565 = 2 bytes per pixel
-    println!("Total animation memory usage: {} KB", total_memory / 1024);
+    // {
+    //     let mut ctrl = controller.borrow_mut();
+    //     ctrl.start();
+    // }
+
+    // // Animation timer
+    // let controller_clone = controller.clone();
+    // let app_weak = app.as_weak();
+    // let timer = slint::Timer::default();
+    // 
+    // timer.start(
+    //     slint::TimerMode::Repeated,
+    //     Duration::from_millis(16),
+    //     move || {
+    //         let app = match app_weak.upgrade() {
+    //             Some(app) => {
+    //                 app
+    //             }
+    //             None => return,
+    //         };
+
+    //         let mut ctrl = controller_clone.borrow_mut();
+    //         if let Some(frame) = ctrl.update() {
+    //             let image = create_slint_image_from_frame(frame);
+    //             app.set_current_frame(image);
+    //         }
+    //     },
+    // );
+    // let total_memory = CAT_EATING_FRAMES.len() * 160 * 160 * 2; // RGB565 = 2 bytes per pixel
+    // println!("Total cat memory usage: {} KB", total_memory / 1024);
     loop {
 
         slint::platform::update_timers_and_animations();
