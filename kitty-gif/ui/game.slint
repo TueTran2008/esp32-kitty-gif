@@ -1,0 +1,147 @@
+import { Button, VerticalBox, HorizontalBox, ProgressIndicator } from "std-widgets.slint";
+
+import {RoundProgress} from "roundprogress.slint";
+export component Game inherits Window{
+    // width: 240px;
+    // height: 320px;
+    // background: #000000;
+    in property <image> current_frame;
+
+    frame-7 := Rectangle {
+        x: 12px;
+        y: 32px;
+        width: 216px;
+        height: 232px;
+        //border-width: 1px;
+        border-color: #ffffff33;
+        frame-47 := Rectangle {
+            x: 0px;
+            y: 0px;
+            width: 216px;
+            height: 232px;
+            Image {
+                x: 31.2px;
+                y: 0px;
+                source: current_frame;
+                width: 160px;
+                height: 160px;
+            }
+            frame-87 := Rectangle {
+                x: 58px;
+                y: 195px;
+                width: 100.769px;
+                height: 19px;
+                arrow-left-wide-line := Image {
+                    x: 0;
+                    y: 0;
+                    width: 16px;
+                    height: 16px;
+                    source: @image-url("assets/arrow-right-wide-line.svg");
+                }
+                frame-86 := Rectangle {
+                    x: 26px;
+                    y: 0px;
+                    width: 54px;
+                    height: 19px;
+                    chiplunk := Text {
+                        text: "Chiplunk";
+                        color: #ffffff;
+                        font-family: "Roboto Mono";
+                        font-size: 10px;
+                        font-weight: 500;
+                        horizontal-alignment: left; 
+                    }
+                }
+                arrow-right-wide-line:= Image {
+                    x: 84.769px;
+                    y: 0px;
+                    width: 16px;
+                    height: 16px;
+                    source: @image-url("assets/arrow-right-wide-line_1.svg");
+                }
+            }
+        }
+        frame-52 := Image {
+            x: 0px;
+            y: 0px;
+            width: 32px;
+            height: 32px;
+            source: @image-url("assets/arrow-left-wide-line.svg");
+        }
+        button-icon_right := Rectangle {
+            x: 184px;
+            y: 0px;
+            width: 32px;
+            height: 32px;
+            border-width: 1px;
+            border-color: #ffffff33;
+            phone-camera-line := Image {
+                x: 8px;
+                y: 8px;
+                width: 16px;
+                height: 16px;
+                source: @image-url("assets/phone-camera-line.svg");
+            }
+        }
+    }
+    food-cake := Image {
+        x: 127.52px;
+        y: 160.64px;
+        width: 42.24px;
+        height: 42.24px;
+        source: @image-url("assets/cake.svg");
+    }
+    action-ball := Image {
+        x: 107.52px;
+        y: 160.64px;
+        width: 42.24px;
+        height: 42.24px;
+        source: @image-url("assets/ball.svg");
+    }
+    action-sleep := Image {
+        x: 139.52px;
+        y: 104.64px;
+        width: 42.24px;
+        height: 42.24px;
+        source: @image-url("assets/sleep.svg");
+    }
+    frame-10 := Rectangle {
+        x: 0px;
+        y: 263.04px;
+        width: 240px;
+        height: 56.96px;
+        eat := RoundProgress {
+            x: 8px;
+            y: 8.48px;
+            width: 69.333px;
+            height: 40px;
+            inner_color: #f9c22b;
+            value: 40%;
+            Image {
+                source: @image-url("assets/icon-park-outline_hamburger.svg");
+            }
+        }
+        play := RoundProgress {
+            x: 85.333px;
+            y: 8.48px;
+            width: 69.333px;
+            height: 40px;
+            inner_color: #89dd47;
+            value: 40%;
+            Image {
+                source: @image-url("assets/icon-park-outline_game-three.svg");
+            }
+        }
+        sleep := RoundProgress {
+            x: 158.667px;
+            y: 8px;
+            width: 69.333px;
+            height: 40px;
+            inner_color: #d39bf7;
+            value: 40%;
+            Image {
+                source: @image-url("assets/solar_moon-sleep-linear.svg");
+            }
+        }
+    }
+}

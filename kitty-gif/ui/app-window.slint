@@ -1,16 +1,38 @@
 import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
 import {HomeLock} from "home-lock.slint";
 import {Home} from "home.slint";
+import {IoT} from "iot.slint";
+import { TopBar } from "top-bar.slint";
+import {LoadingScreenText} from "loading-screen.slint";
+import {Sensor} from "sensors.slint";
+import {AI1} from "ai_screen_1.slint";
+import { Game } from "game.slint";
+import { DeviceLink } from "device-link.slint";
 
 export component AppWindow inherits Window {
     preferred-height: 320px;
     preferred-width: 240px;
     background: #000000;
-    // HomeLock {
+    // IoT {
     //     x: 0;
     //     y: 0;
     // }
-    Home {
+    TopBar {
+        x: 0;
+        y: 0;
+    }
+    // LoadingScreenText {
+    //     x: 0;
+    //     y: 0;
+    // }
+    // Sensor {
+
+    // }
+    // AI1{
+    //    x: 0;
+    //    y: 0;
+    // }
+    DeviceLink {
         x: 0;
         y: 0;
     }

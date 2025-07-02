@@ -1,0 +1,90 @@
+export component DeviceLink{
+    frame-8 := Rectangle {
+        x: 0px;
+        y: 96.52px;
+        width: 240px;
+        height: 223.48px;
+        background: #1c1c1c;
+        frame-90 := Rectangle {
+            x: 7.68px;
+            y: 7.68px;
+            width: 224.64px;
+            height: 24px;
+            link-device := Text {
+                x: 8px;
+                y: 4.5px;
+                text: "Link Device";
+                color: #ededed;
+                font-family: "Roboto Mono";
+                font-size: 10px;
+                font-weight: 700;
+                horizontal-alignment: center; 
+            }
+            frame-96 := Rectangle {
+                x: 200.64px;
+                y: 0px;
+                width: 24px;
+                height: 24px;
+                background: #ffffff1a;
+                close-line := Image {
+                    x: 4px;
+                    y: 4px;
+                    width: 16px;
+                    height: 16px;
+                    source: @image-url("assets/close-line.svg");
+                }
+            }
+        }
+        frame-47 := Rectangle {
+            x: 7.68px;
+            y: 36.8px;
+            width: 224.64px;
+            height: 179px;
+            qr-code := Rectangle {
+                x: 64.32px;
+                y: 12px;
+                width: 96px;
+                height: 96px;
+                background: #d9d9d9;
+                border-radius: 2.56px;
+                qr := Text {
+                    x: 38.72px;
+                    y: 43.52px;
+                    text: "QR";
+                    color: #000000;
+                    font-family: "Instrument Sans";
+                    font-size: 12.8px;
+                    font-weight: 600;
+                    horizontal-alignment: center; 
+                }
+
+            }
+            frame-91 := Rectangle {
+                x: 72.32px;
+                y: 120px;
+                width: 80px;
+                height: 35px;
+                device-id := Text {
+                    x: 13.5px;
+                    y: 1px;
+                    text: "Device ID";
+                    color: #ffffffcc;
+                    font-family: "Roboto Mono";
+                    font-size: 10px;
+                    font-weight: 500;
+                    horizontal-alignment: left; 
+                }
+                joam-3m34 := Text {
+                    x: 0;
+                    y: 17px;
+                    text: "JOAM...3M34";
+                    color: #ededed;
+                    font-family: "Roboto Mono";
+                    font-size: 12px;
+                    font-weight: 700;
+                    horizontal-alignment: center; 
+                }
+            }
+        }
+    }
+}

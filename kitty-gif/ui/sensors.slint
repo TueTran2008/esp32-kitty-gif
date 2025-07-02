@@ -1,0 +1,21 @@
+export component Sensor {
+    x: 0;
+    y: 0;
+    frame-52 := Image {
+        x: 12px;
+        y: 36px;
+        width: 32px;
+        height: 32px;
+        source: @image-url("assets/arrow-left-wide-line.svg");
+    }
+    esp-chip-active-loading := Text {
+        x: 12px;
+        y: 80px;
+        text: "> ESP Chip ACTIVE\n/// Loading...";
+        color: #ffffff;
+        font-family: "Roboto Mono";
+        font-size: 10px;
+        font-weight: 500;
+        horizontal-alignment: left; 
+    }
+}

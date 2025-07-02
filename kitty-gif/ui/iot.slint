@@ -1,0 +1,407 @@
+import { Button, VerticalBox, HorizontalBox, ProgressIndicator, ScrollView} from "std-widgets.slint";
+export component Circle {
+    in property <float> progress: 100%;
+    
+    Rectangle {
+        width: parent.width;
+        height: parent.height;
+
+        path := Path {
+            stroke: red;
+            stroke-width: 1px;
+
+            private property <float> radius: min(self.viewbox-width, self.viewbox-height) / 2 + 10;
+            private property <float> start-x: self.viewbox-width / 2;
+            private property <float> start-y: self.viewbox-height / 2;
+
+            private property <float> mod: 30;
+            private property <float> progress: min(0.9999, root.progress);
+
+            viewbox-width: 100;
+            viewbox-height: 100;
+            width: 100%;
+            height: 100%;
+
+            MoveTo {
+                x: start-x + radius * sin(360deg);
+                y: start-y + radius * cos(360deg);
+            }
+
+            ArcTo {
+                radius-x: path.radius;
+                radius-y: path.radius;
+                x: start-x + path.radius * sin(-(path.progress) * 360deg);
+                y: start-y + path.radius * cos(-(path.progress) * 360deg);
+                sweep: path.progress > 0;
+                large-arc: path.progress > 0.7;
+            }
+        }
+    }
+}
+
+export component IoT{
+    width: 240px;
+    height: 240px;
+    x: 0px;
+    y: 80px;
+    frame-88 := Rectangle {
+        x: 7.68px;
+        y: 35.84px;
+        width: 225.28px;
+        height: 32px;
+    }
+    frame-52 := Image {
+        x: 12px;
+        y: 36px;
+        width: 32px;
+        height: 32px;
+        source: @image-url("assets/arrow-left-wide-line.svg");
+    }
+    sv := Flickable {
+        y: 80px;
+        opacity: 100%;
+        viewport-height: 527px;
+        frame-58 := Rectangle {
+            x: 12px;
+            y: 0px;
+            width: 216px;
+            height: 386px;
+            frame-56 := Rectangle {
+                x: 0px;
+                y: 0px;
+                width: 216px;
+                height: 386px;
+                frame-54 := Rectangle {
+                    x: 0px;
+                    y: 0px;
+                    width: 216px;
+                    height: 105px;
+                    background: @linear-gradient(180deg, #00000000 0%, #0b2947 100%);
+                    border-width: 0.5px;
+                    border-color: #ffffff33;
+                    frame-61 := Rectangle {
+                        x: 12px;
+                        y: 12px;
+                        width: 192px;
+                        height: 38px;
+                        frame-104 := Rectangle {
+                            x: 0px;
+                            y: 3px;
+                            width: 105px;
+                            height: 32px;
+                            frame-4 := Rectangle {
+                                x: 0px;
+                                y: 0px;
+                                width: 32px;
+                                height: 32px;
+                                background: #ffffff1a;
+                                border-radius: 6px;
+                                fri := Text {
+                                    y: 3px;
+                                    text: "FRI";
+                                    color: #ffffff;
+                                    font-family: "Roboto Mono";
+                                    font-size: 7.5px;
+                                    font-weight: 400;
+                                    horizontal-alignment: center;
+                                }
+                                _20 := Text {
+                                    x: 7.5px;
+                                    y: 15px;
+                                    text: "20";
+                                    color: #f9c22b;
+                                    font-family: "Roboto Mono";
+                                    font-size: 13.5px;
+                                    font-weight: 500;
+                                    horizontal-alignment: center;
+                                }
+                            }
+                            frame-72 := Rectangle {
+                                x: 38px;
+                                y: 1px;
+                                width: 67px;
+                                height: 30px;
+                                tokyo := Text {
+                                    x: 0px;
+                                    y: 0px;
+                                    text: "Tokyo";
+                                    color: #ffffff;
+                                    font-family: "Roboto Mono";
+                                    font-size: 10.5px;
+                                    font-weight: 500;
+                                    horizontal-alignment: left;
+                                }
+                                japan := Text {
+                                    x: 0px;
+                                    y: 16px;
+                                    text: "Japan";
+                                    color: #ffffffcc;
+                                    font-family: "Roboto Mono";
+                                    font-size: 9px;
+                                    font-weight: 400;
+                                    horizontal-alignment: left;
+                                }
+                            }
+                        }
+                        frame-97 := Rectangle {
+                            x: 114px;
+                            y: 0px;
+                            width: 78px;
+                            height: 38px;
+                            weather := Image {
+                                x: 0px;
+                                y: 7px;
+                                width: 24px;
+                                height: 24px;
+                                source: @image-url("assets/weather.svg");
+                            }
+                            _28 := Text {
+                                x: 33px;
+                                text: "28°";
+                                color: #ffffff;
+                                font-family: "Roboto Mono";
+                                font-size: 25px;
+                                font-weight: 500;
+                                horizontal-alignment: left;
+                            }
+                        }
+                    }
+                    frame-96 := Rectangle {
+                        x: 12px;
+                        y: 78px;
+                        width: 192px;
+                        height: 15px;
+                        optimal-breeze-vibes-balanced := Text {
+                            x: 0px;
+                            text: "Optimal breeze. Vibes: balanced.";
+                            color: #ffffffcc;
+                            font-family: "Roboto Mono";
+                            font-size: 10px;
+                            font-weight: 500;
+                            horizontal-alignment: left;
+                        }
+                    }
+                    frame-92 := Rectangle {
+                        x: 0px;
+                        y: 111px;
+                        width: 216px;
+                        height: 105px;
+                        frame-62 := Rectangle {
+                            x: 0px;
+                            y: 0px;
+                            width: 105px;
+                            height: 105px;
+                            background: #797fe6;
+                            group-1 := Image {
+                                x: -21px;
+                                y: 37px;
+                                width: 150px;
+                                height: 68px;
+                                source: @image-url("assets/ggroup_1.svg");
+                            }
+                            frame-93 := Rectangle {
+                                x: 12px;
+                                y: 12px;
+                                width: 81px;
+                                height: 30px;
+                                _32 := Text {
+                                    x: 0px;
+                                    y: 0px;
+                                    text: "32%";
+                                    color: #ffffff;
+                                    font-family: "Roboto Mono";
+                                    font-size: 20px;
+                                    font-weight: 500;
+                                    horizontal-alignment: left;
+                                }
+                                contrast-drop-2-line := Image {
+                                    x: 65px;
+                                    y: 0px;
+                                    width: 16px;
+                                    height: 16px;
+                                    source: @image-url("assets/contrast-drop-2-line.svg");
+                                }
+                            }
+                            humidity := Text {
+                                x: 12px;
+                                y: 78px;
+                                text: "Humidity";
+                                color: #ffffff;
+                                font-family: "Roboto Mono";
+                                font-size: 10px;
+                                font-weight: 500;
+                                horizontal-alignment: left; 
+                            }
+                        }
+                        frame-63 := Rectangle {
+                            x: 111px;
+                            y: 0px;
+                            width: 105px;
+                            height: 105px;
+                            background: #1e3134;
+                            remote-control-fill := Image {
+                                x: 46.5px;
+                                y: 12px;
+                                width: 12px;
+                                height: 12px;
+                                source: @image-url("assets/remote-control-fill.svg");
+                            }
+                            frame-76 := Rectangle {
+                                x: 26.5px;
+                                y: 40.5px;
+                                width: 52px;
+                                height: 21px;
+                                background: #89dd47;
+                                border-radius: 3px;
+                                aqi-45 := Text {
+                                    text: "AQI 45";
+                                    color: #000000;
+                                    font-family: "Roboto Mono";
+                                    font-size: 12px;
+                                    font-weight: 500;
+                                    horizontal-alignment: left; 
+                                }
+                            }
+                            ellipse:= Image {
+                                source: @image-url("assets/Ellipse_1.svg");
+                            }
+                        }
+                    }
+                    frame-64 := Rectangle {
+                        x: 0px;
+                        y: 222px;
+                        width: 216px;
+                        height: 48px;
+                        border-width: 0.5px;
+                        border-color: #ffffff33;
+                        frame-77 := Rectangle {
+                            x: 15px;
+                            y: 15px;
+                            width: 186px;
+                            height: 18px;
+                            alcohol-level := Text {
+                                y: 1.5px;
+                                text: "Alcohol Level";
+                                color: #ffffff;
+                                font-family: "Roboto Mono";
+                                font-size: 10px;
+                                font-weight: 500;
+                                horizontal-alignment: left; 
+                            }
+                            _0-04 := Text {
+                                x: 145px;
+                                y: -1.5px;
+                                text: "0.04%";
+                                color: #9c8cfa;
+                                font-family: "Roboto Mono";
+                                font-size: 14px;
+                                font-weight: 500;
+                                horizontal-alignment: left; 
+                            }
+                        }
+                    }
+                    frame-94 := Rectangle {
+                        x: 0px;
+                        y: 276px;
+                        width: 216px;
+                        height: 59px;
+                        frame-65 := Rectangle {
+                            x: 0px;
+                            y: 0px;
+                            width: 216px;
+                            height: 59px;
+                            border-width: 0.5px;
+                            border-color: #ffffff33;
+                            frame-98 := Rectangle {
+                                x: 4px;
+                                y: 4px;
+                                width: 103px;
+                                height: 51px;
+                                background: #ffffff1a;
+                                co := Text {
+                                    x: 45.5px;
+                                    y: 9px;
+                                    text: "CO";
+                                    color: #f99656;
+                                    font-family: "Roboto Mono";
+                                    font-size: 10px;
+                                    font-weight: 500;
+                                    horizontal-alignment: left; 
+                                }
+                                _0-01-mg-m := Text {
+                                    x: 16.5px;
+                                    y: 24px;
+                                    text: "0.01 mg/m³";
+                                    color: #ffffff;
+                                    font-family: "Roboto Mono";
+                                    font-size: 12px;
+                                    font-weight: 500;
+                                    horizontal-alignment: left; 
+                                }
+                            }
+                            frame-99 := Rectangle {
+                                x: 109px;
+                                y: 4px;
+                                width: 103px;
+                                height: 51px;
+                                background: #ffffff1a;
+                                ch := Text {
+                                    x: 44px;
+                                    y: 9px;
+                                    text: "CH₄     ";
+                                    color: #f99656;
+                                    font-family: "Roboto Mono";
+                                    font-size: 10px;
+                                    font-weight: 500;
+                                    horizontal-alignment: left; 
+                                }
+                                _0-05-ppm := Text {
+                                    x: 23.5px;
+                                    y: 24px;
+                                    text: "0.05 ppm";
+                                    color: #ffffff;
+                                    font-family: "Roboto Mono";
+                                    font-size: 12px;
+                                    font-weight: 500;
+                                    horizontal-alignment: left; 
+                                }
+                            }
+                        }
+                    }
+                    frame-65_down := Rectangle {
+                        x: 0px;
+                        y: 341px;
+                        width: 216px;
+                        height: 45px;
+                        background: #ffffff1a;
+                        frame-77_down := Rectangle {
+                            x: 15px;
+                            y: 15px;
+                            width: 186px;
+                            height: 15px;
+                            smart-home := Text {
+                                x: 0;
+                                text: "Smart Home";
+                                color: #ffffff;
+                                font-family: "Roboto Mono";
+                                font-size: 10px;
+                                font-weight: 500;
+                                horizontal-alignment: left; 
+                            }
+                            coming-soon := Text {
+                                x: 121px;
+                                text: "Coming Soon";
+                                color: #ffffffcc;
+                                font-family: "Roboto Mono";
+                                font-size: 10px;
+                                font-weight: 500;
+                                horizontal-alignment: left; 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+ 
