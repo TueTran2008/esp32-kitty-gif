@@ -1,5 +1,6 @@
 export component WifiMenuBar {
     callback go_back();
+    callback go_to_wifi();
     frame-131 := Rectangle {
         x: 10px;
         y: 32px;
@@ -45,6 +46,11 @@ export component WifiMenuBar {
                 y: 0px;
                 width: 216px;
                 height: 31px;
+                TouchArea {
+                    clicked => {
+                        root.go_to_wifi();
+                    }
+                }
                 background: #ffffff1a;
                 frame-117-up := Rectangle {
                     x: 12px;
@@ -73,7 +79,6 @@ export component WifiMenuBar {
                     y: 8px;
                     width: 108px;
                     height: 15px;
-                    
                     firmware := Text {
                         x: 0;
                         text: "Firmware";

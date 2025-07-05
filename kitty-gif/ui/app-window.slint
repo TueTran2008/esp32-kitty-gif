@@ -12,6 +12,7 @@ import { DeviceLinkEd} from "device-linked.slint";
 import { DeviceLinkSucess } from "link-device-sucess.slint";
 import { WifiMenuBar } from "wifi-component.slint";
 import { WiFiConfig } from "wifi-config.slint";
+import { WifiScan } from "wifi-scan.slint";
 
 // export {
 //     Home,
@@ -35,6 +36,8 @@ export enum ScreenState {
     LinkDeviceDone,
     Setting,
     WifiMenuBar,
+    WifiScan,
+    WiFiConfig
 }
 
 export struct ScreenStatus {
@@ -115,6 +118,25 @@ export component AppWindow inherits Window {
         go_back => {
             root.screen_state = ScreenState.Home;
         }
+        go_to_wifi => {
+            root.screen_state = ScreenState.WifiScan;
+        }
+    }
+    WifiScan {
+        x: 0;
+        y: 0;
+        visible: root.screen_state == ScreenState.WifiScan;
+        go_back => {
+            root.screen_state = ScreenState.Home;
+        }
+        go_wifi_config => {
+            root.screen_state = ScreenState.WiFiConfig;
+        }
+    }
+    WiFiConfig {
+        x: 0;
+        y: 0;
+        visible: root.screen_state == ScreenState.WiFiConfig;
     }
 }
 

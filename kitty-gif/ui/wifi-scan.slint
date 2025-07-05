@@ -1,0 +1,138 @@
+import { ListView } from "std-widgets.slint";
+export struct WiFiConnectParameters {
+    connected: bool,
+    ssid: string
+}
+export component WifiScan {
+    in-out property <WiFiConnectParameters> connected_status: {connected: true, ssid: "OK ZOO"};
+    in property<[string]> wifi_scan: [
+        "WiFi1",
+        "WiFi2",
+        "WiFi3"
+    ];
+    in property<int> connected_index;
+    callback go_back();
+    callback go_wifi_config();
+    frame-114 := Rectangle {
+        x: 12px;
+        y: 84px;
+        width: 216px;
+        height: 171px;
+        frame-112 := Rectangle {
+            x: 0px;
+            y: 0px;
+            width: 216px;
+            height: 31px;
+            background: #ffffff1a;
+            frame-117 := Rectangle {
+                x: 12px;
+                y: 8px;
+                width: 108px;
+                height: 15px;
+                wifi-fill := Image {
+                    x: 0px;
+                    y: 1.5px;
+                    width: 12px;
+                    height: 12px;
+                    source: @image-url("assets/wifi-fill_empty.svg");
+                }
+                connect-ssid := Text {
+                    x: 16px;
+                    text: connected_status.ssid;
+                    color: #ffffff;
+                    font-family: "Roboto Mono";
+                    font-size: 10px;
+                    font-weight: 500;
+                    horizontal-alignment: left; 
+                }
+            }
+            connected_flag := Text {
+                x: 151px;
+                y: 8px;
+                visible: connected_status.connected;
+                text: "Connected";
+                color: #89dd47;
+                font-family: "Roboto Mono";
+                font-size: 10px;
+                font-weight: 500;
+                horizontal-alignment: left; 
+            }
+        }
+        list-wifi:= ListView {
+            x: 0px;
+            y: 41px;
+            for data in [
+                { text: "Blue"},
+                { text: "Red"},
+                { text: "Green"},
+                { text: "Yellow"},
+                { text: "Black"},
+                { text: "White"},
+                { text: "Magenta"},
+                { text: "Cyan"},
+            ] : Rectangle {
+                height: 30px;
+                background: #ffffff1a;
+                width: parent.width;
+                frame-list := Rectangle {
+                    x: 12px;
+                    y: 8px;
+                    width: 108px;
+                    height: 15px;
+                    TouchArea {
+                        clicked => {
+                            root.go_wifi_config();
+                        }
+                    }
+                    wifi-fill-list := Image {
+                        x: 0px;
+                        y: 1.5px;
+                        width: 12px;
+                        height: 12px;
+                        source: @image-url("assets/wifi-fill_empty.svg");
+                    }
+                    Text {
+                        x: 16px;
+                        text: data.text;
+                        color: white;
+                        font-family: "Roboto Mono";
+                        font-size: 10px;
+                        font-weight: 500;
+                        horizontal-alignment: left; 
+                    }
+                }
+            }
+        }
+    }
+
+    frame-131 := Rectangle {
+        x: 10px;
+        y: 32px;
+        width: 218px;
+        height: 32px;
+        frame-52 := Rectangle {
+            x: 0px;
+            y: 0px;
+            width: 32px;
+            height: 32px;
+            background: #ffffff1a;
+            arrow-left-wide-line := Image {
+                x: 8px;
+                y: 8px;
+                width: 16px;
+                height: 16px;
+                source: @image-url("assets/arrow-left-wide-line.svg");
+            }
+        }
+        settings := Text {
+            x: 85.5px;
+            y: 8.5px;
+            text: "Wifi";
+            color: #ffffff;
+            font-family: "Roboto Mono";
+            font-size: 10px;
+            font-weight: 500;
+            horizontal-alignment: left; 
+        }
+    }
+}

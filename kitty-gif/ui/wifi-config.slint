@@ -35,14 +35,21 @@ export component WiFiConfig {
         y: 76px;
         width: 218px;
         height: 50px;
-        frame-120 := LineEdit {
-            x: 0px;
-            y: 0px;
+        background: #ffffff1a;
+        frame-120 := TextInput {
+            x: 10px;
             width: 218px;
             height: 50px;
             text: "Input";
+            color: #ffffff66;
+            font-family: "Roboto Mono";
+            font-size: 10px;
+            font-weight: 500;
+            horizontal-alignment: left;
+            vertical-alignment: center;
         }
         VirtualKeyboard { 
+            visible: TextInputInterface.text-input-focused;
             x: 0;
             y: 140px; 
         }
