@@ -1,7 +1,11 @@
 import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
 import { TopBar } from "top-bar.slint";
-export component Home inherits Window {
+export component Home inherits Rectangle {
     in property <string> time;
+    callback go_to_sensor;
+    callback go_to_game;
+    callback go_to_ai;
+    callback go_to_setting;
 
     frame-108 := Rectangle {
         x: 12px;
@@ -27,7 +31,7 @@ export component Home inherits Window {
                     in property <string> week_day;
                     in property <int> date;
                     wd := Text {
-                        x: 6px;
+                        // x: 6px;
                         y: 6px;
                         text: week_day;
                         color: #ffffff;
@@ -186,7 +190,7 @@ export component Home inherits Window {
                         font-family: "Roboto Mono";
                         font-size: 10px;
                         font-weight: 500;
-                        horizontal-alignment: left; 
+                        horizontal-alignment: left;
                     }
                 }
             }
@@ -197,6 +201,11 @@ export component Home inherits Window {
             y: 63px;
             width: 216px;
             height: 56px;
+            TouchArea {
+                clicked => {
+                    root.go_to_game();
+                }
+            }
             frame-62 := Rectangle {
                 x: 0px;
                 y: 0px;
@@ -226,6 +235,11 @@ export component Home inherits Window {
                     width: 93px;
                     height: 42px;
                     border-radius: 63.36px;
+                    TouchArea {
+                        clicked => {
+                            root.go_to_ai();
+                        }
+                    }
                     frame-74 := Rectangle {
                         x: 32.5px;
                         y: 0px;
@@ -288,12 +302,25 @@ export component Home inherits Window {
                 font-weight: 500;
                 horizontal-alignment: left;
             }
+            TouchArea {
+                width: parent.width;
+                height: parent.height;
+                //visible: false;
+                clicked => {
+                    root.go_to_sensor();
+                }
+            }
         }
         frame-109 := Rectangle {
             x: 59px;
             y: 0px;
             width: 63px;
             height: 23px;
+            TouchArea {
+                clicked => {
+                    root.go_to_setting();
+                }
+            }
             background: #ffffff1a;
             settings := Text {
                 text: "Settings";

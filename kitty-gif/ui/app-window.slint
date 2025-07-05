@@ -34,17 +34,19 @@ export enum ScreenState {
     LinkDeviceSucess,
     LinkDeviceDone,
     Setting,
+    WifiMenuBar,
 }
+
 export struct ScreenStatus {
 
 }
+
 export component AppWindow inherits Window {
     preferred-height: 320px;
     preferred-width: 240px;
     background: #000000;
     in-out property <ScreenState> screen_state: HomeLock;
-    property <int> current_index: 0;
-
+    in property <image> current_frame;
     TopBar {
         x: 0;
         y: 0;
@@ -58,56 +60,62 @@ export component AppWindow inherits Window {
             root.screen_state = ScreenState.Home;
         }
     }
+    Image {
+        x: 43px;
+        y: 32px;
+        visible: root.screen_state == ScreenState.Game;
+        source: current_frame;
+    }
     Home {
         x: 0;
         y: 0;
         visible: root.screen_state == ScreenState.Home;
+        go_to_sensor => {
+            root.screen_state = ScreenState.Sensor;
+        }
+        go_to_game => {
+            root.screen_state = ScreenState.Game;
+        }
+        go_to_ai => {
+            root.screen_state = ScreenState.AI;
+        }
+        go_to_setting => {
+            root.screen_state = ScreenState.WifiMenuBar;
+        }
     }
-    // TopBar {
-    //     x: 0;
-    //     y: 0;
-    // }
-    // Home {
-    //     x: 0;
-    //     y: 0;
-    // }
-    // IoT {
-    //     visible: true;
-    //     x: 0;
-    //     y: 0;
-    // }
 
-    // IoT {
-    //     x: 0;
-    //     y: 0;
-    // }
-    // Home {
-    //     x: 0;
-    //     y: 0;
-    // }
-    // LoadingScreenText {
-    //     x: 0;
-    //     y: 0;
-    // }
-    // Sensor {
-
-    // }
-    // AI1{
-    //    x: 0;
-    //    y: 0;
-    // }
-    // DeviceLinkSucess{
-    //     x: 0;
-    //     y: 0;
-    // }
-    // WifiMenuBar {
-    //     x: 0;
-    //     y: 0;
-    // }
-    // WiFiConfig {
-    //     x: 0;
-    //     y: 0;
-    // }
+    Sensor {
+        x: 0;
+        y: 0;
+        visible: root.screen_state == ScreenState.Sensor;
+        go_back => {
+            root.screen_state = ScreenState.Home;
+        }
+    }
+    Game {
+        x: 0;
+        y: 0;
+        visible: root.screen_state == ScreenState.Game;
+        go_back => {
+            root.screen_state = ScreenState.Home;
+        }
+    }
+    AI1 {
+        x: 0;
+        y: 0;
+        visible: root.screen_state == ScreenState.AI;
+        go_back => {
+            root.screen_state = ScreenState.Home;
+        }
+    }
+    WifiMenuBar {
+        x: 0;
+        y: 0;
+        visible: root.screen_state == ScreenState.WifiMenuBar;
+        go_back => {
+            root.screen_state = ScreenState.Home;
+        }
+    }
 }
 
 export component OldApp inherits Window {

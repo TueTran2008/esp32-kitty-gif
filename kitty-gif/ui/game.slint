@@ -1,18 +1,26 @@
 import { Button, VerticalBox, HorizontalBox, ProgressIndicator } from "std-widgets.slint";
 
 import {RoundProgress} from "roundprogress.slint";
+
+export enum GameState {
+    Normal, // Display None
+    Playing, 
+    Eating,
+    Sleeping
+}
+
 export component Game inherits Rectangle{
-    // width: 240px;
-    // height: 320px;
-    // background: #000000;
-    in property <image> current_frame;
+
+    in-out property <GameState> game_state;
+    in-out property <bool> timer_run;
+    callback go_back();
+    pure callback set_current_frame() -> image;
 
     frame-7 := Rectangle {
         x: 12px;
         y: 32px;
         width: 216px;
         height: 232px;
-        //border-width: 1px;
         border-color: #ffffff33;
         frame-47 := Rectangle {
             x: 0px;
@@ -22,7 +30,7 @@ export component Game inherits Rectangle{
             Image {
                 x: 31.2px;
                 y: 0px;
-                source: current_frame;
+                source: root.set_current_frame();
                 width: 160px;
                 height: 160px;
             }
@@ -66,6 +74,11 @@ export component Game inherits Rectangle{
             y: 0px;
             width: 32px;
             height: 32px;
+            TouchArea {
+                clicked => {
+                    root.go_back();
+                }
+            }
             source: @image-url("assets/arrow-left-wide-line.svg");
         }
         button-icon_right := Rectangle {
@@ -84,7 +97,9 @@ export component Game inherits Rectangle{
             }
         }
     }
+
     food-cake := Image {
+        visible: root.game_state == GameState.Eating;
         x: 127.52px;
         y: 160.64px;
         width: 42.24px;
@@ -92,6 +107,7 @@ export component Game inherits Rectangle{
         source: @image-url("assets/cake.svg");
     }
     action-ball := Image {
+        visible: root.game_state == GameState.Playing;
         x: 107.52px;
         y: 160.64px;
         width: 42.24px;
@@ -99,6 +115,7 @@ export component Game inherits Rectangle{
         source: @image-url("assets/ball.svg");
     }
     action-sleep := Image {
+        visible: root.game_state == GameState.Sleeping;
         x: 139.52px;
         y: 104.64px;
         width: 42.24px;
@@ -110,13 +127,55 @@ export component Game inherits Rectangle{
         y: 263.04px;
         width: 240px;
         height: 56.96px;
+        progress_timer:= Timer {
+            interval: 20ms;
+            running: true;
+            triggered => {
+                if root.timer_run == true {
+                    if root.game_state == GameState.Eating {
+                        eat.progress_value = eat.progress_value + 4;
+                        if (eat.progress_value > 100) {
+                            eat.progress_value = 0;
+                            root.game_state = GameState.Normal;
+                            root.timer_run = false;
+                        }
+                    }
+                    if root.game_state == GameState.Playing {
+                        play.progress_value = play.progress_value + 4;
+                        if (play.progress_value > 100) {
+                            play.progress_value = 0;
+                            root.game_state = GameState.Normal;
+                            root.timer_run = false;
+                        }
+                    }
+                    if root.game_state == GameState.Sleeping {
+                        sleep.progress_value = sleep.progress_value + 4;
+                        if (sleep.progress_value > 100) {
+                            sleep.progress_value = 0;
+                            root.game_state = GameState.Normal;
+                            root.timer_run = false;
+                        }
+                    }
+                }
+            }
+        }
         eat := RoundProgress {
             x: 8px;
             y: 8.48px;
             width: 69.333px;
             height: 40px;
             inner_color: #f9c22b;
-            value: 40%;
+            TouchArea {
+                clicked => {
+                    if root.game_state == GameState.Normal {
+                        root.game_state = GameState.Eating;
+                        root.timer_run = true;
+                    }
+                }
+            }
+            game_done => {
+                
+            }
             Image {
                 source: @image-url("assets/icon-park-outline_hamburger.svg");
             }
@@ -127,7 +186,14 @@ export component Game inherits Rectangle{
             width: 69.333px;
             height: 40px;
             inner_color: #89dd47;
-            value: 40%;
+            TouchArea {
+                clicked => {
+                    if root.game_state == GameState.Normal {
+                        root.game_state = GameState.Playing;
+                        root.timer_run = true;
+                    }
+                }
+            }
             Image {
                 source: @image-url("assets/icon-park-outline_game-three.svg");
             }
@@ -138,7 +204,17 @@ export component Game inherits Rectangle{
             width: 69.333px;
             height: 40px;
             inner_color: #d39bf7;
-            value: 40%;
+            TouchArea {
+                clicked => {
+                    if root.game_state == GameState.Normal {
+                        root.game_state = GameState.Sleeping;
+                        root.timer_run = true;
+                    }
+                }
+            }
+            // game_done => {
+            //     root.game_state = GameState.Normal;
+            // }
             Image {
                 source: @image-url("assets/solar_moon-sleep-linear.svg");
             }

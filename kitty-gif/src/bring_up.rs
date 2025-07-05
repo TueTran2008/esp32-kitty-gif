@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::Mutex;
 use crate::ui::MyPlatform;
 use esp_idf_hal::delay::{Delay, Ets, FreeRtos};
@@ -18,7 +20,7 @@ use slint::platform::{PointerEventButton, WindowEvent};
 slint::include_modules!();
 use crate::ui::DisplayWrapper;
 use mipidsi::options::{ColorInversion, ColorOrder};
-use slint::{Image, SharedPixelBuffer};
+use slint::{ComponentHandle, Image, SharedPixelBuffer};
 use static_cell::StaticCell;
 use std::time::{Duration, Instant};
 ////////
@@ -27,7 +29,7 @@ use esp_idf_hal::{i2c};
 
 use crate::FrameData;
 // use crate::cat_dance_frames::CAT_DANCE_FRAMES;
-// use crate::cat_eating_frames::CAT_EATING_FRAMES;
+use crate::cat_eating_frames::CAT_EATING_FRAMES;
 // use crate::cat_playing_frames::CAT_PLAYING_FRAMES;
 
 static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
@@ -125,8 +127,6 @@ pub fn init_window() {
     window.set_size(slint::PhysicalSize::new(240, 320));
 
     let app = AppWindow::new().unwrap();
-    let home = IoT::new().unwrap();
-    let topbard = TopBar::new().unwrap();
 
     let mut pwr_en = PinDriver::output(peripherals.pins.gpio7).unwrap();
     pwr_en.set_high().unwrap();
@@ -180,53 +180,57 @@ pub fn init_window() {
 
     let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 240];
 
+    //Create animation controller with pre-processed frames
+    let controller = Rc::new(RefCell::new(AnimationController::new(&CAT_EATING_FRAMES)));
+
+    {
+        let mut ctrl = controller.borrow_mut();
+        ctrl.start();
+    }
+
+    // Animation timer
+    let controller_clone = controller.clone();
+    let app_weak = app.as_weak();
+    let timer = slint::Timer::default();
     
+    timer.start(
+        slint::TimerMode::Repeated,
+        Duration::from_millis(16),
+        move || {
+            let app = match app_weak.upgrade() {
+                Some(app) => {
+                    app
+                }
+                None => return,
+            };
 
-    // let mut display = init_peripheral(peripherals).unwrap();
-    //let peripherals = display.1;
-
-    // Create animation controller with pre-processed frames
-    // let controller = Rc::new(RefCell::new(AnimationController::new(&CAT_EATING_FRAMES)));
-
-    // {
-    //     let mut ctrl = controller.borrow_mut();
-    //     ctrl.start();
-    // }
-
-    // // Animation timer
-    // let controller_clone = controller.clone();
-    // let app_weak = app.as_weak();
-    // let timer = slint::Timer::default();
-    // 
-    // timer.start(
-    //     slint::TimerMode::Repeated,
-    //     Duration::from_millis(16),
-    //     move || {
-    //         let app = match app_weak.upgrade() {
-    //             Some(app) => {
-    //                 app
-    //             }
-    //             None => return,
-    //         };
-
-    //         let mut ctrl = controller_clone.borrow_mut();
-    //         if let Some(frame) = ctrl.update() {
-    //             let image = create_slint_image_from_frame(frame);
-    //             app.set_current_frame(image);
-    //         }
-    //     },
-    // );
+            let mut ctrl = controller_clone.borrow_mut();
+            if let Some(frame) = ctrl.update() {
+                let image = create_slint_image_from_frame(frame);
+                app.set_current_frame(image);
+            }
+        },
+    );
+    timer.stop();
     // let total_memory = CAT_EATING_FRAMES.len() * 160 * 160 * 2; // RGB565 = 2 bytes per pixel
-    // println!("Total cat memory usage: {} KB", total_memory / 1024);
+    //println!("Total cat memory usage: {} KB", total_memory / 1024);
     let mut bl = PinDriver::output(peripherals.pins.gpio5).unwrap();
-    // let mut last_touch = None;
+    let mut last_touch = None;
     // topbard.show().unwrap();
 
     loop {
         bl.set_high().unwrap();
         slint::platform::update_timers_and_animations();
+        match app.get_screen_state() {
+            ScreenState::Game => {
+                timer.restart();
+            }
+            _ =>  {
+                timer.stop();
+            }
+        };
+
         match touch.get_xy_data() {
-            //log::info!("{:?}", event);
             Ok(Some(event_touch)) => {
                 let pos = slint::PhysicalPosition::new(event_touch.x_cord as i32, event_touch.y_cord as i32)
                     .to_logical(window.scale_factor());
@@ -269,6 +273,6 @@ pub fn init_window() {
                 line_buffer: &mut line_buffer,
             });
         });
-        FreeRtos::delay_ms(1);
+        //FreeRtos::delay_ms(1);
     }
 }

@@ -1,10 +1,16 @@
-export component AI1 inherits Window {
+export component AI1 inherits Rectangle {
+    callback go_back();
     ai := Rectangle {
         frame-52 := Image {
             x: 12px;
             y: 36px;
             width: 32px;
             height: 32px;
+            TouchArea {
+                clicked => {
+                    root.go_back();
+                }
+            }
             source: @image-url("assets/arrow-left-wide-line.svg");
         }
         frame-12 := Rectangle {
