@@ -1,0 +1,89 @@
+export component WifiMenuBar {
+    frame-131 := Rectangle {
+        x: 10px;
+        y: 32px;
+        width: 218px;
+        height: 32px;
+        frame-52 := Rectangle {
+            x: 0px;
+            y: 0px;
+            width: 32px;
+            height: 32px;
+            background: #ffffff1a;
+            arrow-left-wide-line := Image {
+                x: 8px;
+                y: 8px;
+                width: 16px;
+                height: 16px;
+                source: @image-url("assets/arrow-left-wide-line.svg");
+            }
+        }
+        settings := Text {
+            x: 85.5px;
+            y: 8.5px;
+            text: "Settings";
+            color: #ffffff;
+            font-family: "Roboto Mono";
+            font-size: 10px;
+            font-weight: 500;
+            horizontal-alignment: left; 
+        }
+    }
+    frame-122 := Rectangle {
+        x: 12px;
+        y: 84px;
+        width: 216px;
+        height: 64px;
+        frame-123 := Rectangle {
+            x: 0px;
+            y: 0px;
+            width: 216px;
+            height: 64px;
+            frame-113 := Rectangle {
+                x: 0px;
+                y: 0px;
+                width: 216px;
+                height: 31px;
+                background: #ffffff1a;
+                frame-117-up := Rectangle {
+                    x: 12px;
+                    y: 8px;
+                    width: 108px;
+                    height: 15px;
+                    wifi := Text {
+                        x: 0;
+                        text: "Wifi";
+                        color: #ffffff;
+                        font-family: "Roboto Mono";
+                        font-size: 10px;
+                        font-weight: 500;
+                        horizontal-alignment: left; 
+                    }
+                }
+            }
+            frame-114 := Rectangle {
+                x: 0px;
+                y: 33px;
+                width: 216px;
+                height: 31px;
+                background: #ffffff1a;
+                frame-117 := Rectangle {
+                    x: 12px;
+                    y: 8px;
+                    width: 108px;
+                    height: 15px;
+                    
+                    firmware := Text {
+                        x: 0;
+                        text: "Firmware";
+                        color: #ffffff;
+                        font-family: "Roboto Mono";
+                        font-size: 10px;
+                        font-weight: 500;
+                        horizontal-alignment: left; 
+                    }
+                }
+            }
+        }
+    }
+}

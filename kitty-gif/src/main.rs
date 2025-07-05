@@ -26,6 +26,8 @@ fn main() {
 
     log::info!("Hello, world From Darwin!");
     // let _ret = init_lcd();
+
+    
     init_window();
 
     // Ok(())

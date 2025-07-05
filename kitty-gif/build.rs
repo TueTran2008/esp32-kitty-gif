@@ -104,9 +104,9 @@ pub fn generate_all_frames() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() {
-    slint_build::compile("ui/home-window.slint").expect("Slint build failed");
-    slint_build::compile("ui/roundprogress.slint").expect("Slint build failed");
-    slint_build::compile("ui/splash-window.slint").expect("Slint build failed");
+    // slint_build::compile("ui/home-window.slint").expect("Slint build failed");
+    // slint_build::compile("ui/roundprogress.slint").expect("Slint build failed");
+    // slint_build::compile("ui/splash-window.slint").expect("Slint build failed");
     slint_build::compile("ui/app-window.slint").expect("Slint build failed");
     embuild::espidf::sysenv::output();
     if let Err(e) = generate_all_frames() {

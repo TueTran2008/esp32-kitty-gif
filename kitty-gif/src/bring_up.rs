@@ -1,12 +1,8 @@
-use crate::error::Result;
 use std::sync::Mutex;
-use std::thread;
 use crate::ui::MyPlatform;
-use esp_idf_hal::cpu::Core;
 use esp_idf_hal::delay::{Delay, Ets, FreeRtos};
-use esp_idf_hal::gpio::{Gpio39, Gpio41, Gpio5};
+use esp_idf_hal::gpio::{Gpio39, Gpio41};
 use esp_idf_hal::i2c::{I2cConfig, I2cDriver};
-use esp_idf_hal::task::thread::ThreadSpawnConfiguration;
 use esp_idf_hal::units::FromValueType;
 use esp_idf_hal::{
     prelude::Peripherals,
@@ -18,152 +14,24 @@ use mipidsi::interface::SpiInterface;
 use mipidsi::models::{ST7789};
 use mipidsi::Builder;
 use slint::platform::software_renderer::{MinimalSoftwareWindow};
+use slint::platform::{PointerEventButton, WindowEvent};
 slint::include_modules!();
 use crate::ui::DisplayWrapper;
 use mipidsi::options::{ColorInversion, ColorOrder};
 use slint::{Image, SharedPixelBuffer};
 use static_cell::StaticCell;
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::time::{Duration, Instant};
 ////////
 use cst816s::Cst328;
-use esp_idf_hal::gpio::{AnyIOPin, OutputPin};
-use esp_idf_hal::task::block_on;
 use esp_idf_hal::{i2c};
-use shared_bus::BusManager;
-use std::sync::{Arc};
+
 use crate::FrameData;
-use crate::cat_dance_frames::CAT_DANCE_FRAMES;
-use crate::cat_eating_frames::CAT_EATING_FRAMES;
-use crate::cat_playing_frames::CAT_PLAYING_FRAMES;
-//////////////
-// include!("CAT_DANCE_frames.rs");
-// include!("CAT_EATING_frames.rs");
-// include!("CAT_PLAYING_frames.rs");
+// use crate::cat_dance_frames::CAT_DANCE_FRAMES;
+// use crate::cat_eating_frames::CAT_EATING_FRAMES;
+// use crate::cat_playing_frames::CAT_PLAYING_FRAMES;
 
 static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
 
-pub type FrontDisplayDriver<'d> = mipidsi::Display<
-    SpiInterface<'d, SpiDeviceDriver<'d, SpiDriver<'d>>, PinDriver<'d, Gpio41, Output>>,
-    ST7789,
-    PinDriver<'d, Gpio39, Output>,
->;
-
-// pub struct TouchTaskData<'a> {
-//     pub shared_cursor: Arc<Mutex<Option<TouchEvent>>>,
-//     pub delay: Delay,
-//     pub bus: &'a BusManager<Mutex<i2c::I2cDriver<'a>>>,
-//     pub int1: AnyIOPin,
-//     pub reset: AnyIOPin,
-// }
-// pub fn setup_touch(
-//     touch: &mut Cst816s<shared_bus::I2cProxy<'_, Mutex<i2c::I2cDriver<'_>>>, Delay>,
-// ){
-//     let mut irq_ctl = IrqCtl(0);
-//     irq_ctl.set_en_test(false);
-//     irq_ctl.set_en_touch(true);
-//     irq_ctl.set_en_change(true);
-//     irq_ctl.set_en_motion(true);
-//     irq_ctl.set_en_once_wlp(true);
-//     touch.write_irq_ctl(irq_ctl).unwrap();
-
-//     let mut motion_mask = MotionMask(0);
-//     motion_mask.set_en_double_click(true);
-//     motion_mask.set_en_continuous_left_right(true);
-//     motion_mask.set_en_continuous_up_down(true);
-//     touch.write_motion_mask(motion_mask).unwrap();
-
-//     touch.write_lp_scan_idac(1).unwrap();
-//     touch.write_lp_scan_freq(7).unwrap();
-//     touch.write_lp_scan_win(3).unwrap();
-//     touch.write_lp_scan_th(48).unwrap();
-//     touch.write_motion_s1_angle(0).unwrap();
-//     touch.write_long_press_time(10).unwrap();
-//     touch.write_auto_reset(5).unwrap();
-
-// }
-
-pub fn init_lcd<'d>() -> Result<(FrontDisplayDriver<'d>, PinDriver<'d, Gpio5, Output>)> {
-    let peripherals = Peripherals::take()?;
-    let spi = peripherals.spi2;
-    let sclk = peripherals.pins.gpio40;
-    let mosi = peripherals.pins.gpio45;
-    let miso = peripherals.pins.gpio46;
-    let cs = peripherals.pins.gpio42;
-    let config = Config::new().baudrate(26.MHz().into());
-    // Define the delay struct, needed for the display driver
-    let mut delay = Ets;
-    // Define the Data/Command select pin as a digital output
-    let spi_device = SpiDeviceDriver::new_single(
-        spi,
-        sclk,
-        mosi,
-        Some(miso),
-        Some(cs),
-        &SpiDriverConfig::new(),
-        &config,
-    )?;
-    // let a = [0_u8; 512];
-    let buffer = BUFFER.init([0; 512]);
-    let slice: &'static mut [u8] = buffer;
-    let dc = PinDriver::output(peripherals.pins.gpio41)?;
-    let rst = PinDriver::output(peripherals.pins.gpio39)?;
-    // Define the display interface with no chip select
-    let di = SpiInterface::new(spi_device, dc, slice);
-    let display = Builder::new(ST7789, di)
-        .reset_pin(rst)
-        .color_order(ColorOrder::Rgb).invert_colors(ColorInversion::Inverted)
-        .init(&mut delay)
-        .unwrap();
-    log::info!("Initialize the ST7798");
-    let bl = PinDriver::output(peripherals.pins.gpio5)?;
-
-    /////////////////////////////////// Touch peripheral init
-    let mut touch_int = PinDriver::input(peripherals.pins.gpio4).unwrap();
-    let mut touch_rst = PinDriver::output(peripherals.pins.gpio2).unwrap();
-    let touch_sda_pin = peripherals.pins.gpio1;
-    let touch_scl_pin = peripherals.pins.gpio3;
-    let touch_i2c_config = I2cConfig::new().baudrate(400.kHz().into());
-    let i2c = peripherals.i2c0;
-    let mut touch_i2c = I2cDriver::new(i2c, touch_sda_pin, touch_scl_pin, &touch_i2c_config).unwrap();
-    let mut delay_source:Delay = Default::default();
-    let bus: &'static shared_bus::BusManager<Mutex<i2c::I2cDriver<'_>>> = shared_bus::new_std!(i2c::I2cDriver = touch_i2c).unwrap();
-
-    let mut touch = Cst328::new(bus.acquire_i2c(), delay_source);
-    touch.reset(&mut touch_rst, &mut delay_source).unwrap();
-
-   //setup_touch(&mut touch);
-
-    ThreadSpawnConfiguration {
-        name: Some(b"touch\0"),
-        stack_size: 16000, // only the Builder::new().stack_size is real
-        priority: 10,
-        pin_to_core: Some(Core::Core0),
-        ..Default::default()
-    };
-    let _thread_3 = std::thread::Builder::new()
-    .stack_size(16000).spawn(move || {
-        loop {
-            //let result = block_on(touch_int.wait_for_rising_edge());
-
-            let event = touch.get_xy_data().unwrap();
-            log::info!("number {:?}",event);
-    
-            // if let Ok(event) = event {
-            //     let mut value = data.shared_cursor.lock().unwrap();
-            //     *value = Some(event.points[0]);
-            // }
-    
-            // if result.is_ok() {
-            // } else if let Err(err) = result {
-            //     log::error!("waiting on interupt error: {}", err)
-            // }
-            FreeRtos::delay_ms(1000);
-        }
-    });
-    Ok((display, bl))
-}
 // Frame data structure
 // Animation controller
 struct AnimationController {
@@ -247,6 +115,7 @@ fn create_slint_image_from_frame(frame: &FrameData) -> Image {
 }
 
 pub fn init_window() {
+    let peripherals = Peripherals::take().unwrap();
     let window = MinimalSoftwareWindow::new(slint::platform::software_renderer::RepaintBufferType::ReusedBuffer);
     slint::platform::set_platform(Box::new(MyPlatform {
         window: window.clone(),
@@ -254,11 +123,68 @@ pub fn init_window() {
     .unwrap();
     // Make sure the window covers our entire screen.
     window.set_size(slint::PhysicalSize::new(240, 320));
+
     let app = AppWindow::new().unwrap();
+    let home = IoT::new().unwrap();
+    let topbard = TopBar::new().unwrap();
+
+    let mut pwr_en = PinDriver::output(peripherals.pins.gpio7).unwrap();
+    pwr_en.set_high().unwrap();
+    
+//////////////////
+    let spi = peripherals.spi2;
+    let sclk = peripherals.pins.gpio40; //MTDO
+    let mosi = peripherals.pins.gpio45; //
+    let miso = peripherals.pins.gpio46;
+    let cs = peripherals.pins.gpio42; //MTDI
+    let config = Config::new().baudrate(26.MHz().into());
+    // Define the delay struct, needed for the display driver
+    let mut delay = Ets;
+    // Define the Data/Command select pin as a digital output
+    let spi_device = SpiDeviceDriver::new_single(
+        spi,
+        sclk,
+        mosi,
+        Some(miso),
+        Some(cs),
+        &SpiDriverConfig::new(),
+        &config,
+    ).unwrap();
+    // let a = [0_u8; 512];
+    let buffer = BUFFER.init([0; 512]);
+    let slice: &'static mut [u8] = buffer;
+    let dc = PinDriver::output(peripherals.pins.gpio41).unwrap(); //MTDI
+    let rst = PinDriver::output(peripherals.pins.gpio39).unwrap(); //MTCK
+    // Define the display interface with no chip select
+    let di = SpiInterface::new(spi_device, dc, slice);
+    let mut display = Builder::new(ST7789, di)
+        .reset_pin(rst)
+        .color_order(ColorOrder::Rgb).invert_colors(ColorInversion::Inverted)
+        .init(&mut delay)
+        .unwrap();
+    log::info!("Initialize the ST7798");
+
+    /////////////////////////////////// Touch peripheral init
+    let mut touch_int = PinDriver::input(peripherals.pins.gpio4).unwrap();
+    let mut touch_rst = PinDriver::output(peripherals.pins.gpio2).unwrap();
+    let touch_sda_pin = peripherals.pins.gpio1;
+    let touch_scl_pin = peripherals.pins.gpio3;
+    let touch_i2c_config = I2cConfig::new().baudrate(400.kHz().into());
+    let i2c = peripherals.i2c0;
+    let mut touch_i2c = I2cDriver::new(i2c, touch_sda_pin, touch_scl_pin, &touch_i2c_config).unwrap();
+    let mut delay_source:Delay = Default::default();
+    let bus: &'static shared_bus::BusManager<Mutex<i2c::I2cDriver<'_>>> = shared_bus::new_std!(i2c::I2cDriver = touch_i2c).unwrap();
+
+    let mut touch = Cst328::new(bus.acquire_i2c(), delay_source);
+    touch.reset(&mut touch_rst, &mut delay_source).unwrap();
 
     let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 240];
-    let mut display = init_lcd().unwrap();
-    let _ = display.1.set_high();
+
+    
+
+    // let mut display = init_peripheral(peripherals).unwrap();
+    //let peripherals = display.1;
+
     // Create animation controller with pre-processed frames
     // let controller = Rc::new(RefCell::new(AnimationController::new(&CAT_EATING_FRAMES)));
 
@@ -292,15 +218,57 @@ pub fn init_window() {
     // );
     // let total_memory = CAT_EATING_FRAMES.len() * 160 * 160 * 2; // RGB565 = 2 bytes per pixel
     // println!("Total cat memory usage: {} KB", total_memory / 1024);
-    loop {
+    let mut bl = PinDriver::output(peripherals.pins.gpio5).unwrap();
+    // let mut last_touch = None;
+    // topbard.show().unwrap();
 
+    loop {
+        bl.set_high().unwrap();
         slint::platform::update_timers_and_animations();
+        match touch.get_xy_data() {
+            //log::info!("{:?}", event);
+            Ok(Some(event_touch)) => {
+                let pos = slint::PhysicalPosition::new(event_touch.x_cord as i32, event_touch.y_cord as i32)
+                    .to_logical(window.scale_factor());
+                let event = if let Some(previous_pos) = last_touch.replace(pos) {
+                    // If the position changed, send a PointerMoved event.
+                    if previous_pos != pos {
+                        WindowEvent::PointerMoved { position: pos }
+                    } else {
+                        // If the position is unchanged, skip event generation.
+                        continue;
+                    }
+                } else {
+                    // No previous touch recorded, generate a PointerPressed event.
+                    WindowEvent::PointerPressed {
+                        position: pos,
+                        button: PointerEventButton::Left,
+                    }
+                };
+                // Dispatch the event to Slint.
+                log::info!("{:?}", event);
+                window.try_dispatch_event(event).unwrap();
+            },
+            Ok(None) => {
+                if let Some(pos) = last_touch.take() {
+                    window.try_dispatch_event(WindowEvent::PointerReleased {
+                        position: pos,
+                        button: PointerEventButton::Left,
+                    }).unwrap();
+                    window.try_dispatch_event(WindowEvent::PointerExited).unwrap();
+                }
+            },
+            Err(_) => {
+                todo!("Implement errror handle if have to");
+            }
+        }
+
         window.draw_if_needed(|renderer| {
             renderer.render_by_line(DisplayWrapper {
-                display: &mut display.0,
+                display: &mut display,
                 line_buffer: &mut line_buffer,
             });
         });
-        FreeRtos::delay_ms(100);
+        FreeRtos::delay_ms(1);
     }
 }

@@ -1,0 +1,55 @@
+import { VirtualKeyboard } from "virtual_keyboard.slint";
+import { LineEdit } from "std-widgets.slint";
+export component WiFiConfig {
+    frame-52 := Image {
+        x: 10px;
+        y: 32px;
+        width: 32px;
+        height: 32px;
+        source: @image-url("assets/arrow-left-wide-line.svg");
+    }
+    frame-117 := Rectangle {
+        x: 66px;
+        y: 40px;
+        width: 108px;
+        height: 15px;
+        wifi-fill := Image {
+            x: 0px;
+            y: 1.5px;
+            width: 12px;
+            height: 12px;
+            source: @image-url("assets/wifi-fill.svg");
+        }
+        okzoo-wifi := Text {
+            x: 16px;
+            text: "OKZOO Wifi";
+            color: #ffffff;
+            font-family: "Roboto Mono";
+            font-size: 10px;
+            font-weight: 500;
+            horizontal-alignment: left; 
+        }
+    }
+    frame-121 := Rectangle {
+        x: 10px;
+        y: 76px;
+        width: 218px;
+        height: 50px;
+        frame-120 := LineEdit {
+            x: 0px;
+            y: 0px;
+            width: 218px;
+            height: 50px;
+            text: "Input";
+        }
+        VirtualKeyboard { 
+            x: 0;
+            y: 140px; 
+        }
+        // FocusScope {}
+        // if TextInputInterface.text-input-focused: VirtualKeyboard {
+        //     x: 0;
+        //     y: 140px;
+        // }
+    }
+}

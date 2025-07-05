@@ -1,11 +1,8 @@
 import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
 import { TopBar } from "top-bar.slint";
-export component Home {
+export component Home inherits Window {
     in property <string> time;
-    TopBar{
-        x: 0;
-        y: 0;
-    }
+
     frame-108 := Rectangle {
         x: 12px;
         y: 36px;
@@ -284,8 +281,6 @@ export component Home {
             height: 23px;
             background: #ffffff1a;
             sensors := Text {
-                // x: 8px;
-                // y: 4px;
                 text: "Sensors";
                 color: #ffffff;
                 font-family: "Roboto Mono";
@@ -301,15 +296,12 @@ export component Home {
             height: 23px;
             background: #ffffff1a;
             settings := Text {
-                // x: 8px;
-                // y: 4px;
                 text: "Settings";
                 color: #ffffff;
                 font-family: "Roboto Mono";
                 font-size: 10px;
                 font-weight: 500;
                 horizontal-alignment: left;
-                // vertical-alignment: center;
             }
         }
 

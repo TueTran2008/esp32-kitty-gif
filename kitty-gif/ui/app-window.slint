@@ -8,19 +8,83 @@ import {Sensor} from "sensors.slint";
 import {AI1} from "ai_screen_1.slint";
 import { Game } from "game.slint";
 import { DeviceLink } from "device-link.slint";
+import { DeviceLinkEd} from "device-linked.slint";
+import { DeviceLinkSucess } from "link-device-sucess.slint";
+import { WifiMenuBar } from "wifi-component.slint";
+import { WiFiConfig } from "wifi-config.slint";
 
+// export {
+//     Home,
+//     IoT,
+//     HomeLock,
+//     TopBar,
+//     DeviceLink,
+//     DeviceLinkEd,
+//     DeviceLinkSucess
+// }
+export enum ScreenState {
+    HomeLock,
+    Home,
+    LoadingSreen,
+    IOT,
+    Sensor,
+    AI,
+    Game,
+    LinkDevice,
+    LinkDeviceSucess,
+    LinkDeviceDone,
+    Setting,
+}
+export struct ScreenStatus {
+
+}
 export component AppWindow inherits Window {
     preferred-height: 320px;
     preferred-width: 240px;
     background: #000000;
-    // IoT {
-    //     x: 0;
-    //     y: 0;
-    // }
+    in-out property <ScreenState> screen_state: HomeLock;
+    property <int> current_index: 0;
+
     TopBar {
         x: 0;
         y: 0;
     }
+
+    HomeLock {
+        visible: root.screen_state == ScreenState.HomeLock;
+        x: 0;
+        y: 0;
+        go_to_home_page => {
+            root.screen_state = ScreenState.Home;
+        }
+    }
+    Home {
+        x: 0;
+        y: 0;
+        visible: root.screen_state == ScreenState.Home;
+    }
+    // TopBar {
+    //     x: 0;
+    //     y: 0;
+    // }
+    // Home {
+    //     x: 0;
+    //     y: 0;
+    // }
+    // IoT {
+    //     visible: true;
+    //     x: 0;
+    //     y: 0;
+    // }
+
+    // IoT {
+    //     x: 0;
+    //     y: 0;
+    // }
+    // Home {
+    //     x: 0;
+    //     y: 0;
+    // }
     // LoadingScreenText {
     //     x: 0;
     //     y: 0;
@@ -32,10 +96,18 @@ export component AppWindow inherits Window {
     //    x: 0;
     //    y: 0;
     // }
-    DeviceLink {
-        x: 0;
-        y: 0;
-    }
+    // DeviceLinkSucess{
+    //     x: 0;
+    //     y: 0;
+    // }
+    // WifiMenuBar {
+    //     x: 0;
+    //     y: 0;
+    // }
+    // WiFiConfig {
+    //     x: 0;
+    //     y: 0;
+    // }
 }
 
 export component OldApp inherits Window {
