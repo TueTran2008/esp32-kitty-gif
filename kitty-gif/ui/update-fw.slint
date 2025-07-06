@@ -1,0 +1,167 @@
+export enum UpdateStatus {
+    Normal,
+    Updating,
+    Error
+}
+export component UpdateFW {
+    callback go_back();
+    callback go_update();
+    in-out property <string> update_text: "Update now";
+    in-out property <UpdateStatus> update_status: UpdateStatus.Normal;
+    in-out property <int> percent;
+    frame-131 := Rectangle {
+        x: 10px;
+        y: 32px;
+        width: 218px;
+        height: 32px;
+        frame-52 := Image {
+            x: 0px;
+            y: 0px;
+            width: 32px;
+            height: 32px;
+            source: @image-url("assets/arrow-left-wide-line.svg");
+            TouchArea {
+                clicked => {
+                    root.go_back();
+                }
+            }
+        }
+        firmware := Text {
+            text: "Firmware";
+            color: #ffffff;
+            font-family: "Roboto Mono";
+            font-size: 10px;
+            font-weight: 500;
+            horizontal-alignment: center; 
+            vertical-alignment: center;
+        }
+    }
+    frame-122 := Rectangle {
+        x: 12px;
+        y: 81px;
+        width: 216px;
+        height: 142px;
+        frame-126 := Rectangle {
+            x: 0px;
+            y: 0px;
+            width: 216px;
+            height: 31px;
+            frame-112 := Rectangle {
+                x: 0px;
+                y: 0px;
+                width: 216px;
+                height: 31px;
+                background: #ffffff1a;
+                frame-117 := Rectangle {
+                    x: 12px;
+                    y: 8px;
+                    width: 108px;
+                    height: 15px;
+                    current-version := Text {
+                        x: 0;
+                        text: "Current Version";
+                        color: #ffffff;
+                        font-family: "Roboto Mono";
+                        font-size: 10px;
+                        font-weight: 500;
+                        horizontal-alignment: left; 
+                    }
+                }
+                _1-0-1 := Text {
+                    x: 174px;
+                    y: 8px;
+                    text: "1.0.1";
+                    color: #ffffff;
+                    font-family: "Roboto Mono";
+                    font-size: 10px;
+                    font-weight: 500;
+                    horizontal-alignment: left; 
+                }
+            }
+        }
+        frame-125 := Rectangle {
+            x: 0px;
+            y: 51px;
+            width: 216px;
+            height: 91px;
+            new-version-available := Text {
+                x: 0;
+                y: 0;
+                text: "New version available";
+                color: #ffffffcc;
+                font-family: "Roboto Mono";
+                font-size: 10px;
+                font-weight: 500;
+                horizontal-alignment: left; 
+            }
+            frame-124 := Rectangle {
+                x: 0px;
+                y: 22px;
+                width: 75px;
+                height: 31px;
+                _1-0-2 := Text {
+                    x: 0;
+                    y: 0;
+                    text: "1.0.2";
+                    color: #89dd47;
+                    font-family: "Roboto Mono";
+                    font-size: 10px;
+                    font-weight: 500;
+                    horizontal-alignment: left; 
+                }
+                new-features-123 := Text {
+                    x: 0;
+                    y: 23px;
+                    text: "New features 123";
+                    color: #ffffff;
+                    font-family: "Roboto Mono";
+                    font-size: 8px;
+                    font-weight: 400;
+                    horizontal-alignment: left; 
+                }
+            }
+            frame-123 := Rectangle {
+                x: 0px;
+                y: 60px;
+                width: 216px;
+                height: 31px;
+                frame-114 := Rectangle {
+                    x: 0px;
+                    y: 0px;
+                    width: 216px;
+                    height: 31px;
+                    border-width: 0.5px;
+                    border-color: #ffffff33;
+                    update-now := Text {
+                        x: 78.5px;
+                        y: 8px;
+                        text: root.update_text;
+                        color: #ffffff;
+                        font-family: "Roboto Mono";
+                        font-size: 10px;
+                        font-weight: 500;
+                        horizontal-alignment: left;
+                    }
+                    TouchArea {
+                        clicked => {
+                            update_status = UpdateStatus.Updating;
+                            root.update_text = "Installing 10%";
+                        }
+                    }
+                }
+            }
+            error-message := Text {
+                //visible: root.update_status == UpdateStatus.Error;
+                x: 0;
+                y: 98px;
+                text: "Error message";
+                color: #ff5240;
+                font-family: "Roboto Mono";
+                font-size: 8px;
+                font-weight: 400;
+                horizontal-alignment: left; 
+            }
+        }
+    }
+
+}

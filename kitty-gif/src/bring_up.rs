@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Mutex;
+use std::thread;
 use crate::ui::MyPlatform;
 use esp_idf_hal::delay::{Delay, Ets, FreeRtos};
 use esp_idf_hal::gpio::{Gpio39, Gpio41};
@@ -20,12 +21,16 @@ use slint::platform::{PointerEventButton, WindowEvent};
 slint::include_modules!();
 use crate::ui::DisplayWrapper;
 use mipidsi::options::{ColorInversion, ColorOrder};
-use slint::{ComponentHandle, Image, SharedPixelBuffer};
+use slint::{ComponentHandle, Image, ModelRc, SharedPixelBuffer, SharedString, VecModel};
 use static_cell::StaticCell;
 use std::time::{Duration, Instant};
 ////////
 use cst816s::Cst328;
 use esp_idf_hal::{i2c};
+// WiFi
+use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
+use esp_idf_svc::wifi::*;
+
 
 use crate::FrameData;
 // use crate::cat_dance_frames::CAT_DANCE_FRAMES;
@@ -33,7 +38,8 @@ use crate::cat_eating_frames::CAT_EATING_FRAMES;
 // use crate::cat_playing_frames::CAT_PLAYING_FRAMES;
 
 static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
-
+const SSID: &str = "TUE";
+const PASSWORD: &str = "Gemtek@123";
 // Frame data structure
 // Animation controller
 struct AnimationController {
@@ -116,9 +122,32 @@ fn create_slint_image_from_frame(frame: &FrameData) -> Image {
     Image::from_rgba8(buffer)
 }
 
+fn connect_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) {
+    let wifi_configuration: Configuration = Configuration::Client(ClientConfiguration {
+        ssid: SSID.try_into().unwrap(),
+        bssid: None,
+        auth_method: AuthMethod::WPA2Personal,
+        password: PASSWORD.try_into().unwrap(),
+        channel: None,
+        ..Default::default()
+    });
+
+    wifi.set_configuration(&wifi_configuration).unwrap();
+
+    wifi.start().unwrap();
+    log::info!("Wifi started");
+
+    // wifi.connect().unwrap();
+    // log::info!("Wifi connected");
+    // wifi.wait_netif_up().unwrap();
+    // log::info!("Wifi netif up");
+
+}
 pub fn init_window() {
     let peripherals = Peripherals::take().unwrap();
     let window = MinimalSoftwareWindow::new(slint::platform::software_renderer::RepaintBufferType::ReusedBuffer);
+    let sys_loop = EspSystemEventLoop::take().unwrap();
+    let nvs = EspDefaultNvsPartition::take().unwrap();
     slint::platform::set_platform(Box::new(MyPlatform {
         window: window.clone(),
     }))
@@ -127,6 +156,17 @@ pub fn init_window() {
     window.set_size(slint::PhysicalSize::new(240, 320));
 
     let app = AppWindow::new().unwrap();
+
+
+    let mut wifi = BlockingWifi::wrap(
+        EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs)).unwrap(),
+        sys_loop,
+    ).unwrap();
+
+    connect_wifi(&mut wifi);
+    let ip_info = wifi.wifi().sta_netif().get_ip_info().unwrap();
+    log::info!("Wifi DHCP info: {ip_info:?}");
+
 
     let mut pwr_en = PinDriver::output(peripherals.pins.gpio7).unwrap();
     pwr_en.set_high().unwrap();
@@ -162,7 +202,7 @@ pub fn init_window() {
         .color_order(ColorOrder::Rgb).invert_colors(ColorInversion::Inverted)
         .init(&mut delay)
         .unwrap();
-    log::info!("Initialize the ST7798");
+    //log::info!("Initialize the ST7798");
 
     /////////////////////////////////// Touch peripheral init
     let mut touch_int = PinDriver::input(peripherals.pins.gpio4).unwrap();
@@ -195,7 +235,7 @@ pub fn init_window() {
     
     timer.start(
         slint::TimerMode::Repeated,
-        Duration::from_millis(16),
+        Duration::from_millis(8),
         move || {
             let app = match app_weak.upgrade() {
                 Some(app) => {
@@ -208,24 +248,65 @@ pub fn init_window() {
             if let Some(frame) = ctrl.update() {
                 let image = create_slint_image_from_frame(frame);
                 app.set_current_frame(image);
+                log::info!("Set frame");
             }
         },
     );
     timer.stop();
-    // let total_memory = CAT_EATING_FRAMES.len() * 160 * 160 * 2; // RGB565 = 2 bytes per pixel
-    //println!("Total cat memory usage: {} KB", total_memory / 1024);
+
     let mut bl = PinDriver::output(peripherals.pins.gpio5).unwrap();
     let mut last_touch = None;
     // topbard.show().unwrap();
-
+    let weak = app.as_weak();
+    app.global::<VirtualKeyboardHandler>().on_key_pressed({
+        let weak = weak.clone();
+        move |key| {
+            let copy = key.clone();
+            weak.unwrap()
+                .window()
+                .dispatch_event(slint::platform::WindowEvent::KeyPressed { text: key.clone() });
+            weak.unwrap()
+                .window()
+                .dispatch_event(slint::platform::WindowEvent::KeyReleased { text: key });
+            //log::info!("Key pressed {}", copy);
+        }
+    });
+    let list_ssid = wifi.scan().unwrap();
+    let ssids: Vec<SharedString> = list_ssid
+    .iter()
+    .map(|ap| SharedString::from(ap.ssid.as_str()))
+    .collect();
+    log::info!("{:?}", ssids);
+    let list = ModelRc::from(Rc::new(VecModel::from(ssids)));
+    app.set_scanned_ssid(list);
+    wifi.connect().unwrap();
+    wifi.wait_netif_up().unwrap();
     loop {
         bl.set_high().unwrap();
         slint::platform::update_timers_and_animations();
+        if wifi.wifi().is_connected().unwrap() {
+           if let Configuration::Client(ssid_connected) = wifi.wifi().get_configuration().unwrap() {
+                let ip_info = wifi.wifi().sta_netif().get_mac().unwrap();
+                app.set_connected_status(WiFiConnectParameters{
+                connected: true,
+                ssid : ssid_connected.ssid.to_string().into(),
+                mac:     SharedString::from(format!(
+                    "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
+                    ip_info[0], ip_info[1], ip_info[2], ip_info[3], ip_info[4], ip_info[5]
+                ))
+               });
+           }
+        }
+
         match app.get_screen_state() {
             ScreenState::Game => {
+                let mut ctrl = controller.borrow_mut();
+                // ctrl.start();
                 timer.restart();
             }
             _ =>  {
+                let mut ctrl = controller.borrow_mut();
+                // ctrl.stop();
                 timer.stop();
             }
         };
@@ -250,7 +331,7 @@ pub fn init_window() {
                     }
                 };
                 // Dispatch the event to Slint.
-                log::info!("{:?}", event);
+                //log::info!("{:?}", event);
                 window.try_dispatch_event(event).unwrap();
             },
             Ok(None) => {

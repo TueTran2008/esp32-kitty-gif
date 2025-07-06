@@ -1,4 +1,5 @@
-export component DeviceLinkEd inherits Window {
+export component DeviceLinkEd inherits Rectangle {
+    callback go_back;
     frame-8 := Rectangle {
         x: 0px;
         y: 158.88px;
@@ -26,6 +27,11 @@ export component DeviceLinkEd inherits Window {
                 width: 24px;
                 height: 24px;
                 source: @image-url("assets/close-line.svg");
+                TouchArea {
+                    clicked => {
+                        root.go_back();
+                    }
+                }
             }
         }
         frame-47 := Rectangle {

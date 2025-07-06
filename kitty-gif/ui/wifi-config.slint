@@ -1,11 +1,18 @@
 import { VirtualKeyboard } from "virtual_keyboard.slint";
 import { LineEdit } from "std-widgets.slint";
 export component WiFiConfig {
+
+    callback go_back_wifi_scan();
     frame-52 := Image {
         x: 10px;
         y: 32px;
         width: 32px;
         height: 32px;
+        TouchArea {
+            clicked => {
+                root.go_back_wifi_scan();
+            }
+        }
         source: @image-url("assets/arrow-left-wide-line.svg");
     }
     frame-117 := Rectangle {

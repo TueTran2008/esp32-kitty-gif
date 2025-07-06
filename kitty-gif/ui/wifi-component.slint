@@ -1,6 +1,7 @@
 export component WifiMenuBar {
     callback go_back();
     callback go_to_wifi();
+    callback go_fw_update();
     frame-131 := Rectangle {
         x: 10px;
         y: 32px;
@@ -12,6 +13,11 @@ export component WifiMenuBar {
             width: 32px;
             height: 32px;
             background: #ffffff1a;
+            TouchArea {
+                clicked => {
+                    root.go_back();
+                }
+            }
             arrow-left-wide-line := Image {
                 x: 8px;
                 y: 8px;
@@ -73,6 +79,11 @@ export component WifiMenuBar {
                 y: 33px;
                 width: 216px;
                 height: 31px;
+                TouchArea {
+                    clicked => {
+                        root.go_fw_update();
+                    }
+                }
                 background: #ffffff1a;
                 frame-117 := Rectangle {
                     x: 12px;

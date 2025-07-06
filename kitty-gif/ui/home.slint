@@ -6,6 +6,8 @@ export component Home inherits Rectangle {
     callback go_to_game;
     callback go_to_ai;
     callback go_to_setting;
+    callback go_to_device_link;
+    callback device_link;
 
     frame-108 := Rectangle {
         x: 12px;
@@ -347,6 +349,11 @@ export component Home inherits Rectangle {
             height: 16px;
             Image {
                 source: @image-url("assets/phone-camera-line.svg");
+            }
+            TouchArea {
+                clicked => {
+                    device_link();
+                }
             }
         }
     }

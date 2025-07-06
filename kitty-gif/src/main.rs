@@ -3,9 +3,9 @@ mod error;
 mod ui;
 use bring_up::init_window;
 
-mod cat_dance_frames;
+//mod cat_dance_frames;
 mod cat_eating_frames;
-mod cat_playing_frames;
+//mod cat_playing_frames;
 
 // Frame data structure
 #[derive(Clone)]
@@ -25,9 +25,7 @@ fn main() {
     esp_idf_svc::log::EspLogger::initialize_default();
 
     log::info!("Hello, world From Darwin!");
-    // let _ret = init_lcd();
 
-    
     init_window();
 
     // Ok(())
