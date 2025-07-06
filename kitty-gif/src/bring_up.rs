@@ -33,8 +33,10 @@ use esp_idf_svc::wifi::*;
 
 
 use crate::FrameData;
+use crate::RgbaFrameData;
 // use crate::cat_dance_frames::CAT_DANCE_FRAMES;
-use crate::cat_eating_frames::CAT_EATING_FRAMES;
+//use crate::cat_eating_frames::CAT_EATING_FRAMES;
+use crate::cat_eating_rgba8::CAT_EATING_RGBA8_FRAMES;
 // use crate::cat_playing_frames::CAT_PLAYING_FRAMES;
 
 static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
@@ -46,11 +48,11 @@ struct AnimationController {
     current_frame: usize,
     last_frame_time: Instant,
     is_playing: bool,
-    frames: &'static [FrameData],
+    frames: &'static [RgbaFrameData],
 }
 
 impl AnimationController {
-    fn new(frames: &'static [FrameData]) -> Self {
+    fn new(frames: &'static [RgbaFrameData]) -> Self {
         Self {
             current_frame: 0,
             last_frame_time: Instant::now(),
@@ -69,7 +71,7 @@ impl AnimationController {
         self.is_playing = false;
     }
 
-    fn update(&mut self) -> Option<&FrameData> {
+    fn update(&mut self) -> Option<&RgbaFrameData> {
         if !self.is_playing || self.frames.is_empty() {
             return None;
         }
@@ -110,11 +112,10 @@ fn rgb565_to_rgba8(rgb565_data: &[u16], width: u16, height: u16) -> Vec<u8> {
 }
 
 // Create Slint image from frame data
-fn create_slint_image_from_frame(frame: &FrameData) -> Image {
-    let rgba_data = rgb565_to_rgba8(frame.data, frame.width, frame.height);
-
+fn create_slint_image_from_frame(frame: &RgbaFrameData) -> Image {
+    
     let buffer = SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
-        &rgba_data,
+        &frame.data,
         frame.width as u32,
         frame.height as u32,
     );
@@ -221,7 +222,7 @@ pub fn init_window() {
     let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 240];
 
     //Create animation controller with pre-processed frames
-    let controller = Rc::new(RefCell::new(AnimationController::new(&CAT_EATING_FRAMES)));
+    let controller = Rc::new(RefCell::new(AnimationController::new(&CAT_EATING_RGBA8_FRAMES)));
 
     {
         let mut ctrl = controller.borrow_mut();
@@ -235,7 +236,7 @@ pub fn init_window() {
     
     timer.start(
         slint::TimerMode::Repeated,
-        Duration::from_millis(8),
+        Duration::from_millis(16),
         move || {
             let app = match app_weak.upgrade() {
                 Some(app) => {
@@ -248,11 +249,11 @@ pub fn init_window() {
             if let Some(frame) = ctrl.update() {
                 let image = create_slint_image_from_frame(frame);
                 app.set_current_frame(image);
-                log::info!("Set frame");
+                //log::info!("Set frame");
             }
         },
     );
-    timer.stop();
+    //timer.stop();
 
     let mut bl = PinDriver::output(peripherals.pins.gpio5).unwrap();
     let mut last_touch = None;
@@ -331,7 +332,7 @@ pub fn init_window() {
                     }
                 };
                 // Dispatch the event to Slint.
-                //log::info!("{:?}", event);
+                log::info!("{:?}", event);
                 window.try_dispatch_event(event).unwrap();
             },
             Ok(None) => {
@@ -354,6 +355,6 @@ pub fn init_window() {
                 line_buffer: &mut line_buffer,
             });
         });
-        //FreeRtos::delay_ms(1);
+        //log::info!("hehe");
     }
 }

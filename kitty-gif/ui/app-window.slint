@@ -45,7 +45,7 @@ export struct WiFiConnectParameters {
     ssid: string,
     mac: string,
 }
-export component WifiDisconnected {
+export component WifiDisconnected inherits Rectangle {
     in-out property <WiFiConnectParameters> connected_parameter;
     callback go_back;
     frame-8 := Rectangle {
@@ -272,6 +272,9 @@ export component AppWindow inherits Window {
         visible: root.screen_state == ScreenState.Game;
         go_back => {
             root.screen_state = ScreenState.Home;
+        }
+        display_device => {
+            display_device_link = true;
         }
     }
     AI1 {

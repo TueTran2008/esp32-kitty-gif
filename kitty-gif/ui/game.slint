@@ -14,6 +14,7 @@ export component Game inherits Rectangle{
     in-out property <GameState> game_state;
     in-out property <bool> timer_run;
     callback go_back();
+    callback display_device();
     pure callback set_current_frame() -> image;
 
     frame-7 := Rectangle {
@@ -66,6 +67,11 @@ export component Game inherits Rectangle{
                     width: 16px;
                     height: 16px;
                     source: @image-url("assets/arrow-right-wide-line_1.svg");
+                    TouchArea {
+                        clicked => {
+                            display_device();
+                        }
+                    }
                 }
             }
         }
@@ -94,6 +100,11 @@ export component Game inherits Rectangle{
                 width: 16px;
                 height: 16px;
                 source: @image-url("assets/phone-camera-line.svg");
+                TouchArea {
+                    clicked => {
+                        display_device();
+                    }
+                }
             }
         }
     }
@@ -128,12 +139,12 @@ export component Game inherits Rectangle{
         width: 240px;
         height: 56.96px;
         progress_timer:= Timer {
-            interval: 20ms;
+            interval: 10ms;
             running: true;
             triggered => {
                 if root.timer_run == true {
                     if root.game_state == GameState.Eating {
-                        eat.progress_value = eat.progress_value + 4;
+                        eat.progress_value = eat.progress_value + 2;
                         if (eat.progress_value > 100) {
                             eat.progress_value = 0;
                             root.game_state = GameState.Normal;
@@ -141,7 +152,7 @@ export component Game inherits Rectangle{
                         }
                     }
                     if root.game_state == GameState.Playing {
-                        play.progress_value = play.progress_value + 4;
+                        play.progress_value = play.progress_value + 2;
                         if (play.progress_value > 100) {
                             play.progress_value = 0;
                             root.game_state = GameState.Normal;
@@ -149,7 +160,7 @@ export component Game inherits Rectangle{
                         }
                     }
                     if root.game_state == GameState.Sleeping {
-                        sleep.progress_value = sleep.progress_value + 4;
+                        sleep.progress_value = sleep.progress_value + 2;
                         if (sleep.progress_value > 100) {
                             sleep.progress_value = 0;
                             root.game_state = GameState.Normal;
