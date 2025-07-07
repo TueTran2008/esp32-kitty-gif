@@ -34,6 +34,5 @@ fn main() {
     log::info!("Hello, world From Darwin!");
 
     init_window();
-
     // Ok(())
 }

@@ -6,7 +6,7 @@ import {LoadingScreenText} from "loading-screen.slint";
 import {Sensor} from "sensors.slint";
 import {AI1} from "ai_screen_1.slint";
 import { Game } from "game.slint";
-import { DeviceLink } from "device-link.slint";
+import { DeviceLink, DeviceQR } from "device-link.slint";
 import { DeviceLinkEd} from "device-linked.slint";
 import { DeviceLinkSucess } from "link-device-sucess.slint";
 import { WifiMenuBar } from "wifi-component.slint";
@@ -45,7 +45,9 @@ export struct WiFiConnectParameters {
     ssid: string,
     mac: string,
 }
-export component WifiDisconnected inherits Rectangle {
+
+export {DeviceQR}
+export component WifiDisconnected inherits Window {
     in-out property <WiFiConnectParameters> connected_parameter;
     callback go_back;
     frame-8 := Rectangle {
@@ -118,11 +120,9 @@ export component AppWindow inherits Window {
     in-out property <WiFiConnectParameters> connected_status: {connected: true, ssid: "OK ZOO"};
     in-out property <[string]> scanned_ssid;
     in property <image> current_frame;
+    in-out property <image> qr_image;
     in-out property <bool> display_device_link: false;
-    TopBar {
-        x: 0;
-        y: 0;
-    }
+
     frame-114 := Rectangle {
         visible: root.screen_state == ScreenState.WifiScan || root.screen_state == ScreenState.WifiDisconnected;
         x: 12px;
@@ -329,10 +329,16 @@ export component AppWindow inherits Window {
     DeviceLink {
         x: 0;
         y: 0;
+        qr_image: root.qr_image;
         visible: root.display_device_link == true;
         go_back => {
             root.display_device_link = false;
         }
+    }
+    TopBar {
+        x: 0;
+        y: 0;
+        background: #FFFFFF;
     }
 }
 
@@ -500,6 +506,7 @@ export component OldApp inherits Window {
             }
         }
     }
+
     current_time: "09:42";
     preferred-height: 320px;
     preferred-width: 240px; 

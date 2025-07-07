@@ -1,6 +1,15 @@
 use std::fs::{self, File};
 use std::io::{Write, BufWriter};
 use std::path::Path;
+use qrcodegen::Mask;
+use qrcodegen::QrCode;
+use qrcodegen::QrCodeEcc;
+use qrcodegen::QrSegment;
+use qrcodegen::Version;
+use sha256::{digest, try_digest};
+
+const DEVICE_ID: &str = "58db0095571ee686bdc5cfa3a7368eb9";
+const SEERET_KEY: &str = "0bffd683ac83273d91c1d82d89f9d786";
 
 fn rgba_to_rgb565(rgba_data: &[u8]) -> Vec<u16> {
     let mut rgb565_data = Vec::new();
@@ -128,17 +137,51 @@ pub fn generate_rgba8_frames() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn to_svg_string(qr: &QrCode, border: i32) -> String {
+	assert!(border >= 0, "Border must be non-negative");
+	let mut result = String::new();
+	result += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+	result += "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n";
+	let dimension = qr.size().checked_add(border.checked_mul(2).unwrap()).unwrap();
+	result += &format!(
+		"<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 {0} {0}\" stroke=\"none\">\n", dimension);
+	result += "\t<rect width=\"100%\" height=\"100%\" fill=\"#FFFFFF\"/>\n";
+	result += "\t<path d=\"";
+	for y in 0 .. qr.size() {
+		for x in 0 .. qr.size() {
+			if qr.get_module(x, y) {
+				if x != 0 || y != 0 {
+					result += " ";
+				}
+				result += &format!("M{},{}h1v1h-1z", x + border, y + border);
+			}
+		}
+	}
+	result += "\" fill=\"#000000\"/>\n";
+	result += "</svg>\n";
+	result
+}
+
+fn generate_qr_code() {
+    let mac = "11:22:33:44:55:66";
+    let input_sha = format!("{}-{}-{}", DEVICE_ID, SEERET_KEY, "1751897409");
+    let val = digest(input_sha.clone());
+    let data_qr = format!("{}-{}-{}-{}", DEVICE_ID, "1751897409", mac, val);
+    //let result = qrcode_generator::to_png_to_vec(&[DEVICE_ID, "1751897409", &mac, &val].concat(), QrCodeEcc::Low, 512).unwrap();
+    let result = QrCode::encode_text(&[DEVICE_ID, "1751897409", mac, &val].concat(), QrCodeEcc::High).unwrap();
+    let svg = to_svg_string(&result, 4);
+    // Escape SVG string as raw Rust string
+    // Write to src/qr.svg
+    let output_path = Path::new("ui/assets/qr.svg");
+    fs::write(&output_path, svg).expect("Failed to write src/qr.svg");
+}
 fn main() {
-    // slint_build::compile("ui/home-window.slint").expect("Slint build failed");
-    // slint_build::compile("ui/roundprogress.slint").expect("Slint build failed");
-    // slint_build::compile("ui/splash-window.slint").expect("Slint build failed");
     slint_build::compile("ui/app-window.slint").expect("Slint build failed");
     embuild::espidf::sysenv::output();
+    generate_qr_code();
     if let Err(e) = generate_rgba8_frames() {
         println!("cargo:warning=Failed to generate frame data: {}", e);
     }
-
-
 
     slint_build::compile_with_config(
         "ui/app-window.slint",

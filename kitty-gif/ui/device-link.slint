@@ -1,4 +1,8 @@
+export global DeviceQR {
+    pure callback get_qr() -> image;
+}
 export component DeviceLink inherits Rectangle {
+    in-out property <image> qr_image;
     callback go_back;
     frame-8 := Rectangle {
         x: 0px;
@@ -46,23 +50,12 @@ export component DeviceLink inherits Rectangle {
             y: 36.8px;
             width: 224.64px;
             height: 179px;
-            qr-code := Rectangle {
+            qr-code := Image {
                 x: 64.32px;
                 y: 12px;
                 width: 96px;
                 height: 96px;
-                background: #d9d9d9;
-                border-radius: 2.56px;
-                qr := Text {
-                    x: 38.72px;
-                    y: 43.52px;
-                    text: "QR";
-                    color: #000000;
-                    font-family: "Instrument Sans";
-                    font-size: 12.8px;
-                    font-weight: 600;
-                    horizontal-alignment: center; 
-                }
+                source: @image-url("assets/qr.svg");
 
             }
             frame-91 := Rectangle {

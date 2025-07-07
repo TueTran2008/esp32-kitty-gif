@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::fmt::format;
 use std::rc::Rc;
 use std::sync::Mutex;
 use std::thread;
@@ -21,7 +22,7 @@ use slint::platform::{PointerEventButton, WindowEvent};
 slint::include_modules!();
 use crate::ui::DisplayWrapper;
 use mipidsi::options::{ColorInversion, ColorOrder};
-use slint::{ComponentHandle, Image, ModelRc, SharedPixelBuffer, SharedString, VecModel};
+use slint::{ComponentHandle, Image, ModelRc, Rgba8Pixel, SharedPixelBuffer, SharedString, VecModel};
 use static_cell::StaticCell;
 use std::time::{Duration, Instant};
 ////////
@@ -30,8 +31,12 @@ use esp_idf_hal::{i2c};
 // WiFi
 use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
 use esp_idf_svc::wifi::*;
-
-
+use sha256::{digest, try_digest};
+use qrcodegen::Mask;
+use qrcodegen::QrCode;
+use qrcodegen::QrCodeEcc;
+use qrcodegen::QrSegment;
+use qrcodegen::Version;
 use crate::FrameData;
 use crate::RgbaFrameData;
 // use crate::cat_dance_frames::CAT_DANCE_FRAMES;
@@ -42,6 +47,9 @@ use crate::cat_eating_rgba8::CAT_EATING_RGBA8_FRAMES;
 static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
 const SSID: &str = "TUE";
 const PASSWORD: &str = "Gemtek@123";
+
+const DEVICE_ID: &str = "58db0095571ee686bdc5cfa3a7368eb9";
+const SEERET_KEY: &str = "0bffd683ac83273d91c1d82d89f9d786";
 // Frame data structure
 // Animation controller
 struct AnimationController {
@@ -50,6 +58,8 @@ struct AnimationController {
     is_playing: bool,
     frames: &'static [RgbaFrameData],
 }
+
+
 
 impl AnimationController {
     fn new(frames: &'static [RgbaFrameData]) -> Self {
@@ -144,6 +154,42 @@ fn connect_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) {
     // log::info!("Wifi netif up");
 
 }
+fn print_qr(qr: &QrCode) {
+	let border: i32 = 4;
+	for y in -border .. qr.size() + border {
+		for x in -border .. qr.size() + border {
+			let c: char = if qr.get_module(x, y) { '█' } else { ' ' };
+			print!("{0}{0}", c);
+		}
+		println!();
+	}
+	println!();
+}
+fn to_svg_string(qr: &QrCode, border: i32) -> String {
+	assert!(border >= 0, "Border must be non-negative");
+	let mut result = String::new();
+	result += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+	result += "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n";
+	let dimension = qr.size().checked_add(border.checked_mul(2).unwrap()).unwrap();
+	result += &format!(
+		"<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 {0} {0}\" stroke=\"none\">\n", dimension);
+	result += "\t<rect width=\"100%\" height=\"100%\" fill=\"#FFFFFF\"/>\n";
+	result += "\t<path d=\"";
+	for y in 0 .. qr.size() {
+		for x in 0 .. qr.size() {
+			if qr.get_module(x, y) {
+				if x != 0 || y != 0 {
+					result += " ";
+				}
+				result += &format!("M{},{}h1v1h-1z", x + border, y + border);
+			}
+		}
+	}
+	result += "\" fill=\"#000000\"/>\n";
+	result += "</svg>\n";
+	result
+}
+
 pub fn init_window() {
     let peripherals = Peripherals::take().unwrap();
     let window = MinimalSoftwareWindow::new(slint::platform::software_renderer::RepaintBufferType::ReusedBuffer);
@@ -165,8 +211,8 @@ pub fn init_window() {
     ).unwrap();
 
     connect_wifi(&mut wifi);
-    let ip_info = wifi.wifi().sta_netif().get_ip_info().unwrap();
-    log::info!("Wifi DHCP info: {ip_info:?}");
+    // let ip_info = wifi.wifi().sta_netif().get_ip_info().unwrap();
+    // log::info!("Wifi DHCP info: {ip_info:?}");
 
 
     let mut pwr_en = PinDriver::output(peripherals.pins.gpio7).unwrap();
@@ -191,7 +237,6 @@ pub fn init_window() {
         &SpiDriverConfig::new(),
         &config,
     ).unwrap();
-    // let a = [0_u8; 512];
     let buffer = BUFFER.init([0; 512]);
     let slice: &'static mut [u8] = buffer;
     let dc = PinDriver::output(peripherals.pins.gpio41).unwrap(); //MTDI
@@ -234,25 +279,25 @@ pub fn init_window() {
     let app_weak = app.as_weak();
     let timer = slint::Timer::default();
     
-    timer.start(
-        slint::TimerMode::Repeated,
-        Duration::from_millis(16),
-        move || {
-            let app = match app_weak.upgrade() {
-                Some(app) => {
-                    app
-                }
-                None => return,
-            };
+    // timer.start(
+    //     slint::TimerMode::Repeated,
+    //     Duration::from_millis(16),
+    //     move || {
+    //         let app = match app_weak.upgrade() {
+    //             Some(app) => {
+    //                 app
+    //             }
+    //             None => return,
+    //         };
 
-            let mut ctrl = controller_clone.borrow_mut();
-            if let Some(frame) = ctrl.update() {
-                let image = create_slint_image_from_frame(frame);
-                app.set_current_frame(image);
-                //log::info!("Set frame");
-            }
-        },
-    );
+    //         let mut ctrl = controller_clone.borrow_mut();
+    //         if let Some(frame) = ctrl.update() {
+    //             let image = create_slint_image_from_frame(frame);
+    //             app.set_current_frame(image);
+    //             //log::info!("Set frame");
+    //         }
+    //     },
+    // );
     //timer.stop();
 
     let mut bl = PinDriver::output(peripherals.pins.gpio5).unwrap();
@@ -278,10 +323,13 @@ pub fn init_window() {
     .map(|ap| SharedString::from(ap.ssid.as_str()))
     .collect();
     log::info!("{:?}", ssids);
-    let list = ModelRc::from(Rc::new(VecModel::from(ssids)));
-    app.set_scanned_ssid(list);
+    // let list = ModelRc::from(Rc::new(VecModel::from(ssids)));
+    // app.set_scanned_ssid(list);
     wifi.connect().unwrap();
     wifi.wait_netif_up().unwrap();
+    let mac = wifi.wifi().sta_netif().get_mac().unwrap();
+    //let qr = generate_qr_code(format!("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]));
+    //app.set_qr_image(qr);
     loop {
         bl.set_high().unwrap();
         slint::platform::update_timers_and_animations();
@@ -299,18 +347,18 @@ pub fn init_window() {
            }
         }
 
-        match app.get_screen_state() {
-            ScreenState::Game => {
-                let mut ctrl = controller.borrow_mut();
-                // ctrl.start();
-                timer.restart();
-            }
-            _ =>  {
-                let mut ctrl = controller.borrow_mut();
-                // ctrl.stop();
-                timer.stop();
-            }
-        };
+        // match app.get_screen_state() {
+        //     ScreenState::Game => {
+        //         let mut ctrl = controller.borrow_mut();
+        //         // ctrl.start();
+        //         timer.restart();
+        //     }
+        //     _ =>  {
+        //         let mut ctrl = controller.borrow_mut();
+        //         // ctrl.stop();
+        //         timer.stop();
+        //     }
+        // };
 
         match touch.get_xy_data() {
             Ok(Some(event_touch)) => {

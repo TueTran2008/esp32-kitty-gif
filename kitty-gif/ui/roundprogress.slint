@@ -3,7 +3,6 @@ import { ProgressIndicator} from "std-widgets.slint";
 
 export component RoundProgress inherits Rectangle { 
     in property <color> inner_color;  
-    //in property <float> value;
     in-out property <bool> enable: false;
     in-out property <int> progress_value: 0;
     callback game_done();
@@ -19,12 +18,9 @@ export component RoundProgress inherits Rectangle {
         }
 
         fill := Rectangle {
-            // indi := ProgressIndicator {
-            //     progress: value;
-            // }
+            // The progress fill
             x: 0px;
             y: 0px;
-            // The progress fill
             background: inner_color;
             width: (rectangle.width * root.progress_value) / 100;
             height: rectangle.height;

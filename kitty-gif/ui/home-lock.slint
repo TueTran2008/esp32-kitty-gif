@@ -1,9 +1,6 @@
 import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
 import {Home} from "home.slint";
-import { TopBar } from "top-bar.slint";
-export component HomeLock inherits Rectangle{
-    preferred-height: 320px;
-    preferred-width: 240px;
+export component HomeLock inherits Window{
     in property <string> time;
     property <string> name;
     callback go_to_home_page;
