@@ -1,12 +1,9 @@
 use std::fs::{self, File};
 use std::io::{Write, BufWriter};
 use std::path::Path;
-use qrcodegen::Mask;
 use qrcodegen::QrCode;
 use qrcodegen::QrCodeEcc;
-use qrcodegen::QrSegment;
-use qrcodegen::Version;
-use sha256::{digest, try_digest};
+use sha256::{digest};
 
 const DEVICE_ID: &str = "58db0095571ee686bdc5cfa3a7368eb9";
 const SEERET_KEY: &str = "0bffd683ac83273d91c1d82d89f9d786";

@@ -1,12 +1,9 @@
 mod bring_up;
 mod error;
 mod ui;
+mod ota;
 use bring_up::init_window;
-
-//mod cat_dance_frames;
-//mod cat_eating_frames;
 mod cat_eating_rgba8;
-//mod cat_playing_frames;
 
 // Frame data structure
 #[derive(Clone)]

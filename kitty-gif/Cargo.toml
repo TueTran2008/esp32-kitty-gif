@@ -19,29 +19,29 @@ opt-level = "z"
 
 [features]
 default = []
-
 experimental = ["esp-idf-svc/experimental"]
+# Propagated form embeded-svc
+use_serde = ["embedded-svc/use_serde"]
 
 [dependencies]
-image = "0.25.6"
-sha256 = "1.6.0"
-qrcodegen = "1.8.0"
 log = "0.4"
 esp-idf-svc = { version = "0.51", features = ["critical-section", "embassy-time-driver", "embassy-sync"] }
-slint = { version = "1.12.0", default-features = false , features = ["compat-1-2", "unsafe-single-threaded", "libm", "renderer-software", "log", "image-default-formats"]}
+slint = { version = "1.8.0", default-features = false , features = ["compat-1-2", "unsafe-single-threaded", "libm", "renderer-software", "log", "image-default-formats"]}
 mipidsi = { version = "0.9.0"}
 esp-idf-hal = { version = "0.45.2"} 
 display-interface-spi = "0.5.0"
 thiserror = "2.0.12"
 embedded-graphics = "0.8.0"
+embedded-svc = "0.28.1"
 static_cell = "2.1.1"
-cst816s-rs = { path = "/home/tuetd/Desktop/cst816s",features = [
+cst816s-rs = { git = "https://github.com/TueTran2008/cst816s.git",features = [
     "loglib",
     "std",
 ] }
 shared-bus = { git = "https://github.com/Sycrosity/shared-bus.git", version = "0.4.0", features = [
     "std",
 ] }
+mime = "0.3.17"
 
 [build-dependencies]
 image = "0.25.6"
@@ -50,6 +50,14 @@ qrcodegen = "1.8.0"
 embuild = "0.33"
 slint-build = "1.8.0"
 gif = "0.13.3"
+
+[dev-dependencies]
+futures = "0.3"
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
+postcard = "1"
+async-io = "2"
+
 
 [env]
 ESP_IDF_SDKCONFIG_DEFAULTS = { value = "sdkconfig.defaults", relative = true }

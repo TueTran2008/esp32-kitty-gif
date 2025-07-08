@@ -123,6 +123,10 @@ export component AppWindow inherits Window {
     in-out property <image> qr_image;
     in-out property <bool> display_device_link: false;
 
+    TopBar {
+        x: 0;
+        y: 0;
+    }
     frame-114 := Rectangle {
         visible: root.screen_state == ScreenState.WifiScan || root.screen_state == ScreenState.WifiDisconnected;
         x: 12px;
@@ -148,8 +152,6 @@ export component AppWindow inherits Window {
                 wifi-fill := Image {
                     x: 0px;
                     y: 1.5px;
-                    width: 12px;
-                    height: 12px;
                     source: @image-url("assets/wifi-fill_empty.svg");
                 }
                 connect-ssid := Text {
@@ -334,11 +336,6 @@ export component AppWindow inherits Window {
         go_back => {
             root.display_device_link = false;
         }
-    }
-    TopBar {
-        x: 0;
-        y: 0;
-        background: #FFFFFF;
     }
 }
 

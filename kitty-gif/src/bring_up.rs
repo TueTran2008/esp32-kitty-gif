@@ -31,17 +31,11 @@ use esp_idf_hal::{i2c};
 // WiFi
 use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
 use esp_idf_svc::wifi::*;
-use sha256::{digest, try_digest};
-use qrcodegen::Mask;
-use qrcodegen::QrCode;
-use qrcodegen::QrCodeEcc;
-use qrcodegen::QrSegment;
-use qrcodegen::Version;
-use crate::FrameData;
 use crate::RgbaFrameData;
 // use crate::cat_dance_frames::CAT_DANCE_FRAMES;
 //use crate::cat_eating_frames::CAT_EATING_FRAMES;
 use crate::cat_eating_rgba8::CAT_EATING_RGBA8_FRAMES;
+use crate::ota::ota_update_simple;
 // use crate::cat_playing_frames::CAT_PLAYING_FRAMES;
 
 static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
@@ -133,7 +127,7 @@ fn create_slint_image_from_frame(frame: &RgbaFrameData) -> Image {
     Image::from_rgba8(buffer)
 }
 
-fn connect_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) {
+fn setup_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) {
     let wifi_configuration: Configuration = Configuration::Client(ClientConfiguration {
         ssid: SSID.try_into().unwrap(),
         bssid: None,
@@ -147,47 +141,6 @@ fn connect_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) {
 
     wifi.start().unwrap();
     log::info!("Wifi started");
-
-    // wifi.connect().unwrap();
-    // log::info!("Wifi connected");
-    // wifi.wait_netif_up().unwrap();
-    // log::info!("Wifi netif up");
-
-}
-fn print_qr(qr: &QrCode) {
-	let border: i32 = 4;
-	for y in -border .. qr.size() + border {
-		for x in -border .. qr.size() + border {
-			let c: char = if qr.get_module(x, y) { '█' } else { ' ' };
-			print!("{0}{0}", c);
-		}
-		println!();
-	}
-	println!();
-}
-fn to_svg_string(qr: &QrCode, border: i32) -> String {
-	assert!(border >= 0, "Border must be non-negative");
-	let mut result = String::new();
-	result += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-	result += "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n";
-	let dimension = qr.size().checked_add(border.checked_mul(2).unwrap()).unwrap();
-	result += &format!(
-		"<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 {0} {0}\" stroke=\"none\">\n", dimension);
-	result += "\t<rect width=\"100%\" height=\"100%\" fill=\"#FFFFFF\"/>\n";
-	result += "\t<path d=\"";
-	for y in 0 .. qr.size() {
-		for x in 0 .. qr.size() {
-			if qr.get_module(x, y) {
-				if x != 0 || y != 0 {
-					result += " ";
-				}
-				result += &format!("M{},{}h1v1h-1z", x + border, y + border);
-			}
-		}
-	}
-	result += "\" fill=\"#000000\"/>\n";
-	result += "</svg>\n";
-	result
 }
 
 pub fn init_window() {
@@ -210,7 +163,7 @@ pub fn init_window() {
         sys_loop,
     ).unwrap();
 
-    connect_wifi(&mut wifi);
+    setup_wifi(&mut wifi);
     // let ip_info = wifi.wifi().sta_netif().get_ip_info().unwrap();
     // log::info!("Wifi DHCP info: {ip_info:?}");
 
@@ -264,7 +217,7 @@ pub fn init_window() {
     let mut touch = Cst328::new(bus.acquire_i2c(), delay_source);
     touch.reset(&mut touch_rst, &mut delay_source).unwrap();
 
-    let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 240];
+    let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 320];
 
     //Create animation controller with pre-processed frames
     let controller = Rc::new(RefCell::new(AnimationController::new(&CAT_EATING_RGBA8_FRAMES)));
@@ -274,31 +227,31 @@ pub fn init_window() {
         ctrl.start();
     }
 
-    // Animation timer
+    Animation timer
     let controller_clone = controller.clone();
     let app_weak = app.as_weak();
     let timer = slint::Timer::default();
     
-    // timer.start(
-    //     slint::TimerMode::Repeated,
-    //     Duration::from_millis(16),
-    //     move || {
-    //         let app = match app_weak.upgrade() {
-    //             Some(app) => {
-    //                 app
-    //             }
-    //             None => return,
-    //         };
+    timer.start(
+        slint::TimerMode::Repeated,
+        Duration::from_millis(16),
+        move || {
+            let app = match app_weak.upgrade() {
+                Some(app) => {
+                    app
+                }
+                None => return,
+            };
 
-    //         let mut ctrl = controller_clone.borrow_mut();
-    //         if let Some(frame) = ctrl.update() {
-    //             let image = create_slint_image_from_frame(frame);
-    //             app.set_current_frame(image);
-    //             //log::info!("Set frame");
-    //         }
-    //     },
-    // );
-    //timer.stop();
+            let mut ctrl = controller_clone.borrow_mut();
+            if let Some(frame) = ctrl.update() {
+                let image = create_slint_image_from_frame(frame);
+                app.set_current_frame(image);
+                //log::info!("Set frame");
+            }
+        },
+    );
+    timer.stop();
 
     let mut bl = PinDriver::output(peripherals.pins.gpio5).unwrap();
     let mut last_touch = None;
@@ -323,13 +276,14 @@ pub fn init_window() {
     .map(|ap| SharedString::from(ap.ssid.as_str()))
     .collect();
     log::info!("{:?}", ssids);
-    // let list = ModelRc::from(Rc::new(VecModel::from(ssids)));
-    // app.set_scanned_ssid(list);
+    let list = ModelRc::from(Rc::new(VecModel::from(ssids)));
+    app.set_scanned_ssid(list);
     wifi.connect().unwrap();
     wifi.wait_netif_up().unwrap();
     let mac = wifi.wifi().sta_netif().get_mac().unwrap();
     //let qr = generate_qr_code(format!("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]));
     //app.set_qr_image(qr);
+    ota_update_simple();
     loop {
         bl.set_high().unwrap();
         slint::platform::update_timers_and_animations();
