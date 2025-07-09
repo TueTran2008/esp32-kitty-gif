@@ -8,6 +8,7 @@ export component Home inherits Rectangle {
     callback go_to_setting;
     callback go_to_device_link;
     callback device_link;
+    callback go_to_iot;
 
     frame-108 := Rectangle {
         x: 12px;
@@ -148,6 +149,11 @@ export component Home inherits Rectangle {
         y: 125px;
         width: 216px;
         height: 119px;
+        TouchArea {
+            clicked => {
+                go_to_iot();
+            }
+        }
         frame-64 := Rectangle {
             x: 0px;
             y: 0px;
@@ -165,7 +171,6 @@ export component Home inherits Rectangle {
                     y: -1.5px;
                     width: 95px;
                     height: 21px;
-            
                     frame-73 := Rectangle {
                         x: 0px;
                         y: 0.5px;
@@ -349,12 +354,15 @@ export component Home inherits Rectangle {
             height: 16px;
             Image {
                 source: @image-url("assets/phone-camera-line.svg");
-            }
-            TouchArea {
-                clicked => {
-                    device_link();
+                TouchArea {
+                    width: 56px;
+                    height: 40px;
+                    clicked => {
+                        device_link();
+                    }
                 }
             }
+
         }
     }
 }

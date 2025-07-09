@@ -27,8 +27,7 @@ export component TopBar inherits Rectangle {
                 x: 0;
                 y: 0;
                 horizontal-alignment: ImageHorizontalAlignment.center;
-                image-fit: ImageFit.fill;
-                image-rendering: ImageRendering.smooth;
+                colorize: #ffffff;
                 source: @image-url("assets/wifi.svg");
             }
             frame-2 := Rectangle {
@@ -39,6 +38,7 @@ export component TopBar inherits Rectangle {
                 mind-map := Image {
                     x: 0px;
                     y: 0px;
+                    colorize: #ffffff;
                     source: @image-url("assets/mind-map.svg");
                 }
                 _02 := Text {
@@ -74,7 +74,7 @@ export component TopBar inherits Rectangle {
                 width: 12px;
                 height: 12px;
                 source: @image-url("assets/battery-fill.svg");
-                image-rendering: pixelated;
+                colorize: #ffffff;
             }
             battery_text := Text {
                 x: 63px;

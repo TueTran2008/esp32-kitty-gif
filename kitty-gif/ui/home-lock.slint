@@ -5,6 +5,16 @@ export component HomeLock inherits Window{
     property <string> name;
     callback go_to_home_page;
 
+    TouchArea {
+        x: 0;
+        y: 0;
+        width: 240px;
+        height: 320px;
+        clicked => {
+            root.go_to_home_page();
+        }
+        //scroll-event(event) => {}
+    }
     frame-5 := Rectangle {
         x: 12.8px;
         y: 59.52px;
@@ -53,13 +63,6 @@ export component HomeLock inherits Window{
         y: 281.6px;
         width: 154.68px;
         height: 18px;
-        TouchArea {
-            width: parent.width;
-            height: parent.height;
-            clicked => {
-                root.go_to_home_page();
-            }
-        }
         swipe-up-to-start := Text {
             text: "Swipe up to start";
             color: #ededed;

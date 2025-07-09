@@ -3,6 +3,7 @@ export global DeviceQR {
 }
 export component DeviceLink inherits Rectangle {
     in-out property <image> qr_image;
+    in-out property <string> device-id;
     callback go_back;
     frame-8 := Rectangle {
         x: 0px;
@@ -36,6 +37,7 @@ export component DeviceLink inherits Rectangle {
                     y: 4px;
                     width: 16px;
                     height: 16px;
+                    colorize: #ffffff;
                     source: @image-url("assets/close-line.svg");
                 }
                 TouchArea {
@@ -51,12 +53,10 @@ export component DeviceLink inherits Rectangle {
             width: 224.64px;
             height: 179px;
             qr-code := Image {
-                x: 64.32px;
-                y: 12px;
-                width: 96px;
-                height: 96px;
-                source: @image-url("assets/qr.svg");
-
+                y: -10px;
+                width: 120px;
+                height: 120px;
+                source: qr_image;
             }
             frame-91 := Rectangle {
                 x: 72.32px;
@@ -76,7 +76,7 @@ export component DeviceLink inherits Rectangle {
                 joam-3m34 := Text {
                     x: 0;
                     y: 17px;
-                    text: "JOAM...3M34";
+                    text: root.device-id;
                     color: #ededed;
                     font-family: "Roboto Mono";
                     font-size: 12px;

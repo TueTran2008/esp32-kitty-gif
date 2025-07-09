@@ -122,6 +122,7 @@ export component AppWindow inherits Window {
     in property <image> current_frame;
     in-out property <image> qr_image;
     in-out property <bool> display_device_link: false;
+    in property <string> deviceID;
 
     TopBar {
         x: 0;
@@ -232,6 +233,14 @@ export component AppWindow inherits Window {
             root.screen_state = ScreenState.Home;
         }
     }
+    IoT {
+        visible: root.screen_state == ScreenState.IOT;
+        x: 0;
+        y: 0;
+        go_back => { 
+            root.screen_state = ScreenState.Home;
+        }
+    }
     Image {
         x: 43px;
         y: 32px;
@@ -256,6 +265,9 @@ export component AppWindow inherits Window {
         }
         device_link => {
             display_device_link = true;
+        }
+        go_to_iot => {
+            root.screen_state = ScreenState.IOT;
         }
         
     }
@@ -331,6 +343,7 @@ export component AppWindow inherits Window {
     DeviceLink {
         x: 0;
         y: 0;
+        device-id: root.deviceID;
         qr_image: root.qr_image;
         visible: root.display_device_link == true;
         go_back => {

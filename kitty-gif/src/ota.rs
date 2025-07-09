@@ -6,16 +6,18 @@ use embedded_svc::{
     io::Write,
     utils::io,
 };
+use esp_idf_svc::{http::client::Response, ota::{EspFirmwareInfoLoad, EspOtaUpdate, FirmwareInfo}};
 use log::{error, info};
-use esp_idf_svc::http::client::EspHttpConnection;
+use esp_idf_svc::{http::client::EspHttpConnection, ota::EspOta};
+use crate::error::MyError;
 
 /// Send an HTTP POST request.
-fn post_request(client: &mut HttpClient<EspHttpConnection>){
+fn get_new_firmware_version(client: &mut HttpClient<EspHttpConnection>){
     // Prepare payload
     let headers = [
         ("content-length", "0"),
     ];
-    let url = "https://okzoov2-api-dev.oozoo.dev/device/check-sum";
+    let url = "http://okzoov2-api-dev.oozoo.dev/device/check-sum";
 
     // Send request
     let mut request = client.post(url, &headers).unwrap();
@@ -37,20 +39,126 @@ fn post_request(client: &mut HttpClient<EspHttpConnection>){
         ),
         Err(e) => error!("Error decoding response body: {e}"),
     };
-
-
 }
+
+
+
 pub fn ota_update_simple() {
     //let mut client = HttpClient::wrap(EspHttpConnection::new(&Default::default()).unwrap());
     use esp_idf_svc::http::client::{Configuration as HttpConfiguration, EspHttpConnection};
     
-    let config = &HttpConfiguration {
-        crt_bundle_attach: Some(esp_idf_svc::sys::esp_crt_bundle_attach),
-        ..Default::default()
-    };
-    let mut client = HttpClient::wrap(EspHttpConnection::new(&config).unwrap());
-    post_request(&mut client);
+    // let config = &HttpConfiguration {
+    //     crt_bundle_attach: Some(esp_idf_svc::sys::esp_crt_bundle_attach),
+    //     ..Default::default()
+    // };
+    //let mut client = HttpClient::wrap(EspHttpConnection::new(&config).unwrap());
+    let mut client = HttpClient::wrap(EspHttpConnection::new(&Default::default()).unwrap());
+    get_new_firmware_version(&mut client);
 }
+
+// fn get_running_version(ota: &EspOta) -> Result<String<24>, MyError> {
+//     let slot = ota.get_running_slot().map_err(|_| MyError::GetSlotFailed)?;
+
+//     let firmware = slot
+//         .firmware
+//         .as_ref()
+//         .ok_or(MyError::FirmwareMissing)?;
+
+//     Ok(String::from(firmware.version))
+// }
+
+// pub fn check_for_updates(
+//     client: &mut HttpClient<EspHttpConnection>,
+//     url: &str,
+// ) -> Result<(), MyError> {
+//     let mut ota = EspOta::new().map_err(|_| MyError::OtaInit)?;
+
+//     let current_version = get_running_version(&ota)?;
+//     info!("Current version: {current_version}");
+
+//     info!("Checking for updates...");
+
+//     let headers = [
+//         ("Accept", "application/octet-stream"),
+//         ("X-Esp32-Version", &current_version),
+//     ];
+
+//     let request = client
+//         .request(Method::Get, url, &headers)
+//         .map_err(MyError::Http)?;
+
+//     let response = request.submit().map_err(|_| MyError::SendRequest)?;
+
+//     if response.status() == http_status::NOT_MODIFIED {
+//         info!("Already up to date");
+//     } else if response.status() == http_status::OK {
+//         info!("An update is available, updating...");
+//         let mut update = ota.initiate_update().map_err(|_| MyError::InitiateUpdate)?;
+
+//         match download_update(response, &mut update).map_err(|_| MyError::DownloadUpdate) {
+//             Ok(_) => {
+//                 info!("Update done. Restarting...");
+//                 update.complete().map_err(|_| MyError::CompleteUpdate)?;
+//                 esp_idf_svc::hal::reset::restart();
+//             }
+//             Err(err) => {
+//                 error!("Update failed: {err}");
+//                 update.abort().map_err(|_| MyError::AbortUpdate)?;
+//             }
+//         };
+//     }
+
+//     Ok(())
+// }
+
+// fn download_update(
+//     mut response: Response<&mut EspHttpConnection>,
+//     update: &mut EspOtaUpdate<'_>,
+// ) -> Result<(), MyError> {
+//     let mut buffer = [0_u8; 1024];
+
+//     let update_info = read_firmware_info(&mut buffer, &mut response, update)?;
+//     info!("Update version: {}", update_info.version);
+
+//     io::utils::copy(response, update, &mut buffer).map_err(|_| MyError::CopyFailed)?;
+
+//     Ok(())
+// }
+
+// fn read_firmware_info(
+//     buffer: &mut [u8],
+//     response: &mut Response<&mut EspHttpConnection>,
+//     update: &mut EspOtaUpdate,
+// ) -> Result<FirmwareInfo, MyError> {
+//     let update_info_load = EspFirmwareInfoLoad {};
+//     let mut update_info = FirmwareInfo {
+//         version: Default::default(),
+//         released: Default::default(),
+//         description: Default::default(),
+//         signature: Default::default(),
+//         download_id: Default::default(),
+//     };
+
+//     loop {
+//         let n = response.read(buffer).map_err(MyError::IoError)?;
+//         if n == 0 {
+//             break; // EOF
+//         }
+
+//         update.write(&buffer[..n]).map_err(|_| MyError::OtaWriteFailed)?;
+
+//         let parsed = update_info_load
+//             .fetch(&buffer[..n], &mut update_info)
+//             .map_err(|_| MyError::FirmwareInfoParseFailed)?;
+
+//         if parsed {
+//             return Ok(update_info);
+//         }
+//     }
+
+//     Err(MyError::FirmwareInfoNotFound)
+// }
+
 // use http::header::ACCEPT;
 // use http::Uri;
 // use embedded_svc::ota::FirmwareInfo;

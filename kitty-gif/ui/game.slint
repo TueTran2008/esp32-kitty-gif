@@ -45,6 +45,7 @@ export component Game inherits Rectangle{
                     y: 0;
                     width: 16px;
                     height: 16px;
+                    colorize: #ffffff;
                     source: @image-url("assets/arrow-right-wide-line.svg");
                 }
                 frame-86 := Rectangle {
@@ -139,12 +140,12 @@ export component Game inherits Rectangle{
         width: 240px;
         height: 56.96px;
         progress_timer:= Timer {
-            interval: 10ms;
+            interval: 200ms;
             running: true;
             triggered => {
                 if root.timer_run == true {
                     if root.game_state == GameState.Eating {
-                        eat.progress_value = eat.progress_value + 2;
+                        eat.progress_value = eat.progress_value + 10;
                         if (eat.progress_value > 100) {
                             eat.progress_value = 0;
                             root.game_state = GameState.Normal;
@@ -152,7 +153,7 @@ export component Game inherits Rectangle{
                         }
                     }
                     if root.game_state == GameState.Playing {
-                        play.progress_value = play.progress_value + 2;
+                        play.progress_value = play.progress_value + 10;
                         if (play.progress_value > 100) {
                             play.progress_value = 0;
                             root.game_state = GameState.Normal;
@@ -160,7 +161,7 @@ export component Game inherits Rectangle{
                         }
                     }
                     if root.game_state == GameState.Sleeping {
-                        sleep.progress_value = sleep.progress_value + 2;
+                        sleep.progress_value = sleep.progress_value + 10;
                         if (sleep.progress_value > 100) {
                             sleep.progress_value = 0;
                             root.game_state = GameState.Normal;
@@ -221,6 +222,7 @@ export component Game inherits Rectangle{
                 }
             }
             Image {
+                colorize: #ffffff;
                 source: @image-url("assets/solar_moon-sleep-linear.svg");
             }
         }
