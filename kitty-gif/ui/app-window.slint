@@ -5,7 +5,7 @@ import { TopBar } from "top-bar.slint";
 import {LoadingScreenText} from "loading-screen.slint";
 import {Sensor} from "sensors.slint";
 import {AI1} from "ai_screen_1.slint";
-import { Game } from "game.slint";
+import { Game,Animal,GameState,AnimationSwitch } from "game.slint";
 import { DeviceLink, DeviceQR } from "device-link.slint";
 import { DeviceLinkEd} from "device-linked.slint";
 import { DeviceLinkSucess } from "link-device-sucess.slint";
@@ -14,8 +14,7 @@ import { WiFiConfig } from "wifi-config.slint";
 import { WifiScan } from "wifi-scan.slint";
 import { VirtualKeyboardHandler} from "virtual_keyboard.slint";
 import { ListView } from "std-widgets.slint";
-import { UpdateFW } from "update-fw.slint";
-
+import { UpdateFW, UpdateFwCallback } from "update-fw.slint";
 export {VirtualKeyboardHandler}
 
 export enum ScreenState {
@@ -47,6 +46,8 @@ export struct WiFiConnectParameters {
 }
 
 export {DeviceQR}
+
+export  {Animal, GameState, AnimationSwitch}
 export component WifiDisconnected inherits Window {
     in-out property <WiFiConnectParameters> connected_parameter;
     callback go_back;
@@ -112,6 +113,8 @@ export component WifiDisconnected inherits Window {
         }
     }
 }
+
+export  {UpdateFwCallback} 
 export component AppWindow inherits Window {
     preferred-height: 320px;
     preferred-width: 240px;
@@ -123,6 +126,10 @@ export component AppWindow inherits Window {
     in-out property <image> qr_image;
     in-out property <bool> display_device_link: false;
     in property <string> deviceID;
+    in-out property <GameState> game_action: GameState.Normal;
+    in-out property <Animal> game_animal: Animal.Chirplunk;
+    in-out property <string> fw_version;
+    in-out property <string> new_fw_version;
 
     TopBar {
         x: 0;
@@ -268,10 +275,8 @@ export component AppWindow inherits Window {
         }
         go_to_iot => {
             root.screen_state = ScreenState.IOT;
-        }
-        
+        }   
     }
-
     Sensor {
         x: 0;
         y: 0;
@@ -281,6 +286,8 @@ export component AppWindow inherits Window {
         }
     }
     Game {
+        game_state: root.game_action;
+        animal: root.game_animal;
         x: 0;
         y: 0;
         visible: root.screen_state == ScreenState.Game;
@@ -335,6 +342,7 @@ export component AppWindow inherits Window {
     UpdateFW {
         x: 0;
         y: 0;
+        firmware_version: root.fw_version;
         visible: root.screen_state == ScreenState.UpdateFirmware;
         go_back => {
             root.screen_state = ScreenState.WifiScan;

@@ -33,16 +33,28 @@ use esp_idf_hal::{i2c};
 use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
 use esp_idf_svc::wifi::*;
 use crate::RgbaFrameData;
-// use crate::cat_dance_frames::CAT_DANCE_FRAMES;
-//use crate::cat_eating_frames::CAT_EATING_FRAMES;
-use crate::cat_eating_rgba8::CAT_EATING_RGBA8_FRAMES;
-use crate::ota::ota_update_simple;
+use crate::ota::*;
 use qrcodegen::QrCode;
 use qrcodegen::QrCodeEcc;
 use sha256::{digest};
 use sha2::{Sha256, Digest};
 use image::{EncodableLayout, ImageBuffer, Rgb, Rgba};
 use hmac::{Hmac, Mac};
+
+use crate::chirplunk_3_eat_rgba8::{self, CHIRPLUNK_3_EAT_RGBA8_FRAMES};
+use crate::chirplunk_3_jump_rgba8::CHIRPLUNK_3_JUMP_RGBA8_FRAMES;
+use crate::chirplunk_3_sit_rgba8::{self, CHIRPLUNK_3_SIT_RGBA8_FRAMES};
+use crate::chirplunk_3_sleep_rgba8::{self, CHIRPLUNK_3_SLEEP_RGBA8_FRAMES};
+
+use crate::lunafluff_4_eat_rgba8::*;
+use crate::lunafluff_4_jump_rgba8::*;
+use crate::lunafluff_4_sit_rgba8::*;
+use crate::lunafluff_4_sleep_rgba8::*;
+
+use crate::mechapup_3_eat_rgba8::*;
+use crate::mechapup_3_jump_rgba8::*;
+use crate::mechapup_3_sit_rgba8::*;
+use crate::mechapup_3_sleep_rgba8::*;
 
 const DEVICE_ID: &str = "58db0095571ee686bdc5cfa3a7368eb9";
 const SEERET_KEY: &str = "0bffd683ac83273d91c1d82d89f9d786";
@@ -99,6 +111,12 @@ impl AnimationController {
         }
 
         Some(&self.frames[self.current_frame])
+    }
+    /// Switch to new GIF frames
+    fn switch_gif(&mut self, new_frames: &'static [RgbaFrameData]) {
+        self.frames = new_frames;
+        self.current_frame = 0;
+        self.last_frame_time = Instant::now();
     }
 }
 
@@ -243,7 +261,6 @@ pub fn init_window() {
     log::info!("before appwindowFree Heap: {} bytes", unsafe {esp_get_free_heap_size()});
     let app = AppWindow::new().unwrap();
 
-
     let mut wifi = BlockingWifi::wrap(
         EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs)).unwrap(),
         sys_loop,
@@ -256,7 +273,6 @@ pub fn init_window() {
     let mut pwr_en = PinDriver::output(peripherals.pins.gpio7).unwrap();
     pwr_en.set_high().unwrap();
     
-//////////////////
     let spi = peripherals.spi2;
     let sclk = peripherals.pins.gpio40; //MTDO
     let mosi = peripherals.pins.gpio45; //
@@ -275,6 +291,7 @@ pub fn init_window() {
         &SpiDriverConfig::new(),
         &config,
     ).unwrap();
+    let mut board_ota = OtaUpdate::new();
     let buffer = BUFFER.init([0; 512]);
     let slice: &'static mut [u8] = buffer;
     let dc = PinDriver::output(peripherals.pins.gpio41).unwrap(); //MTDI
@@ -286,7 +303,6 @@ pub fn init_window() {
         .color_order(ColorOrder::Rgb).invert_colors(ColorInversion::Inverted)
         .init(&mut delay)
         .unwrap();
-    //log::info!("Initialize the ST7798");
 
     /////////////////////////////////// Touch peripheral init
     let mut touch_int = PinDriver::input(peripherals.pins.gpio4).unwrap();
@@ -305,7 +321,7 @@ pub fn init_window() {
     let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 320];
 
     //Create animation controller with pre-processed frames
-    let controller = Rc::new(RefCell::new(AnimationController::new(&CAT_EATING_RGBA8_FRAMES)));
+    let controller = Rc::new(RefCell::new(AnimationController::new(&CHIRPLUNK_3_SIT_RGBA8_FRAMES)));
 
     {
         let mut ctrl = controller.borrow_mut();
@@ -327,12 +343,10 @@ pub fn init_window() {
                 }
                 None => return,
             };
-
             let mut ctrl = controller_clone.borrow_mut();
             if let Some(frame) = ctrl.update() {
                 let image = create_slint_image_from_frame(frame);
                 app.set_current_frame(image);
-                //log::info!("Set frame");
             }
         },
     );
@@ -340,7 +354,6 @@ pub fn init_window() {
 
     let mut bl = PinDriver::output(peripherals.pins.gpio5).unwrap();
     let mut last_touch = None;
-    // topbard.show().unwrap();
     let weak = app.as_weak();
     app.global::<VirtualKeyboardHandler>().on_key_pressed({
         let weak = weak.clone();
@@ -352,8 +365,68 @@ pub fn init_window() {
             weak.unwrap()
                 .window()
                 .dispatch_event(slint::platform::WindowEvent::KeyReleased { text: key });
-            //log::info!("Key pressed {}", copy);
         }
+    });
+    // let ota_version = board_ota.version.unwrap();
+    // app.global::<UpdateFwCallback>().on_get_version(||{
+
+    // });
+    app.global::<UpdateFwCallback>().on_exec_update(move ||{
+        board_ota.firmware_update();
+    });
+    app.global::<AnimationSwitch>().on_animation_switch(move |action, animal| {
+                log::info!("{:?} - {:?}", action, animal);
+                let mut ctrl = controller.borrow_mut();
+                match animal {
+                    Animal::Chirplunk => {
+                        match action {
+                            GameState::Normal => {
+                                ctrl.switch_gif(&CHIRPLUNK_3_SIT_RGBA8_FRAMES);
+                            },
+                            GameState::Eating => {
+                                ctrl.switch_gif(&CHIRPLUNK_3_EAT_RGBA8_FRAMES);
+                            },
+                            GameState::Sleeping => {
+                                ctrl.switch_gif(&CHIRPLUNK_3_SLEEP_RGBA8_FRAMES);
+                            },
+                            GameState::Playing => {
+                                ctrl.switch_gif(&CHIRPLUNK_3_JUMP_RGBA8_FRAMES);
+                            }
+                        }
+                    },
+                    Animal::Mechapup => {
+                        match action {
+                            GameState::Normal => {
+                                ctrl.switch_gif(&MECHAPUP_3_SIT_RGBA8_FRAMES);
+                            },
+                            GameState::Eating => {
+                                ctrl.switch_gif(&MECHAPUP_3_EAT_RGBA8_FRAMES);
+                            },
+                            GameState::Sleeping => {
+                                ctrl.switch_gif(&MECHAPUP_3_SLEEP_RGBA8_FRAMES);
+                            },
+                            GameState::Playing => {
+                                ctrl.switch_gif(&MECHAPUP_3_JUMP_RGBA8_FRAMES);
+                            }
+                        }
+                    },
+                    Animal::LunaFluff => {
+                        match action {
+                            GameState::Normal => {
+                                ctrl.switch_gif(&LUNAFLUFF_4_SIT_RGBA8_FRAMES);
+                            },
+                            GameState::Eating => {
+                                ctrl.switch_gif(&LUNAFLUFF_4_EAT_RGBA8_FRAMES);
+                            },
+                            GameState::Sleeping => {
+                                ctrl.switch_gif(&LUNAFLUFF_4_SLEEP_RGBA8_FRAMES);
+                            },
+                            GameState::Playing => {
+                                ctrl.switch_gif(&LUNAFLUFF_4_JUMP_RGBA8_FRAMES);
+                            }
+                        }
+                    }
+                }
     });
     // let list_ssid = wifi.scan().unwrap();
     // let ssids: Vec<SharedString> = list_ssid
@@ -371,37 +444,37 @@ pub fn init_window() {
     log::info!("before wifi Heap: {} bytes", unsafe {esp_get_free_heap_size()});
     wifi.connect().unwrap();
     wifi.wait_netif_up().unwrap();
+
     // let mac = wifi.wifi().sta_netif().get_mac().unwrap();
     //let qr = generate_qr_code(format!("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]));
     //app.set_qr_image(qr);
     log::info!("before http Heap: {} bytes", unsafe {esp_get_free_heap_size()});
-    ota_update_simple();
+
     loop {
         bl.set_high().unwrap();
         slint::platform::update_timers_and_animations();
-        // if wifi.wifi().is_connected().unwrap() {
-        //    if let Configuration::Client(ssid_connected) = wifi.wifi().get_configuration().unwrap() {
-        //         let ip_info = wifi.wifi().sta_netif().get_mac().unwrap();
-        //         app.set_connected_status(WiFiConnectParameters{
-        //         connected: true,
-        //         ssid : ssid_connected.ssid.to_string().into(),
-        //         mac:     SharedString::from(format!(
-        //             "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
-        //             ip_info[0], ip_info[1], ip_info[2], ip_info[3], ip_info[4], ip_info[5]
-        //         ))
-        //        });
-        //    }
-        // }
+
+        if wifi.wifi().is_connected().unwrap() {
+           if let Configuration::Client(ssid_connected) = wifi.wifi().get_configuration().unwrap() {
+                let ip_info = wifi.wifi().sta_netif().get_mac().unwrap();
+                app.set_connected_status(WiFiConnectParameters{
+                connected: true,
+                ssid : ssid_connected.ssid.to_string().into(),
+                mac:     SharedString::from(format!(
+                    "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
+                    ip_info[0], ip_info[1], ip_info[2], ip_info[3], ip_info[4], ip_info[5]
+                ))
+               });
+           }
+        }
 
         match app.get_screen_state() {
             ScreenState::Game => {
-                let mut ctrl = controller.borrow_mut();
-                // ctrl.start();
+                //let mut ctrl = controller.borrow_mut();
                 timer.restart();
             }
             _ =>  {
-                let mut ctrl = controller.borrow_mut();
-                // ctrl.stop();
+                //let mut ctrl = controller.borrow_mut();
                 timer.stop();
             }
         };
@@ -446,12 +519,12 @@ pub fn init_window() {
         //Rendering 320x240 takes more than 200ms :(, which is suck
         
         window.draw_if_needed(|renderer| {
-            log::info!("Before render");
+            //log::info!("Before render");
             renderer.render_by_line(DisplayWrapper {
                 display: &mut display,
                 line_buffer: &mut line_buffer,
             });
-            log::info!("After render");
+            //log::info!("After render");
         });
         
     }

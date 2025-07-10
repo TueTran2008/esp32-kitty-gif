@@ -3,7 +3,19 @@ mod error;
 mod ui;
 mod ota;
 use bring_up::init_window;
-mod cat_eating_rgba8;
+
+mod lunafluff_4_eat_rgba8;
+mod lunafluff_4_jump_rgba8;
+mod lunafluff_4_sit_rgba8;
+mod lunafluff_4_sleep_rgba8;
+mod chirplunk_3_eat_rgba8;
+mod chirplunk_3_jump_rgba8;
+mod chirplunk_3_sit_rgba8;
+mod chirplunk_3_sleep_rgba8;
+mod mechapup_3_eat_rgba8;
+mod mechapup_3_jump_rgba8;
+mod mechapup_3_sit_rgba8;
+mod mechapup_3_sleep_rgba8;
 
 // Frame data structure
 #[derive(Clone)]
@@ -13,7 +25,6 @@ pub struct FrameData {
     pub width: u16,
     pub height: u16,
 }
-// Bạn cần có struct này trong project:
 pub struct RgbaFrameData {
     pub data: &'static [u8],
     pub delay_ms: u32,

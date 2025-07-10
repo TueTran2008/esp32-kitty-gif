@@ -3,12 +3,17 @@ export enum UpdateStatus {
     Updating,
     Error
 }
+export global UpdateFwCallback {
+    pure callback get_version() -> string;
+    pure callback exec_update();
+}
 export component UpdateFW {
     callback go_back();
     callback go_update();
     in-out property <string> update_text: "Update now";
     in-out property <UpdateStatus> update_status: UpdateStatus.Normal;
     in-out property <int> percent;
+    in-out property <string> firmware_version;
     frame-131 := Rectangle {
         x: 10px;
         y: 32px;
@@ -19,6 +24,7 @@ export component UpdateFW {
             y: 0px;
             width: 32px;
             height: 32px;
+            colorize: white;
             source: @image-url("assets/arrow-left-wide-line.svg");
             TouchArea {
                 clicked => {
@@ -102,7 +108,7 @@ export component UpdateFW {
                 _1-0-2 := Text {
                     x: 0;
                     y: 0;
-                    text: "1.0.2";
+                    text: firmware_version;
                     color: #89dd47;
                     font-family: "Roboto Mono";
                     font-size: 10px;
@@ -144,8 +150,10 @@ export component UpdateFW {
                     }
                     TouchArea {
                         clicked => {
-                            update_status = UpdateStatus.Updating;
-                            root.update_text = "Installing 10%";
+                            if (root.update_status != UpdateStatus.Updating) {
+                                root.update_status = UpdateStatus.Updating;
+                                UpdateFwCallback.exec_update();
+                            }
                         }
                     }
                 }

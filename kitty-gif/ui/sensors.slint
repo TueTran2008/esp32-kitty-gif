@@ -8,6 +8,7 @@ export component Sensor inherits Rectangle {
         width: 32px;
         height: 32px;
         source: @image-url("assets/arrow-left-wide-line.svg");
+        colorize: white;
         TouchArea {
             clicked => {
                 root.go_back();
