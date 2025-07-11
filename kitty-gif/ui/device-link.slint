@@ -1,4 +1,10 @@
-export component DeviceLink inherits Window {
+export global DeviceQR {
+    pure callback get_qr() -> image;
+}
+export component DeviceLink inherits Rectangle {
+    in-out property <image> qr_image;
+    in-out property <string> device-id;
+    callback go_back;
     frame-8 := Rectangle {
         x: 0px;
         y: 96.52px;
@@ -31,7 +37,15 @@ export component DeviceLink inherits Window {
                     y: 4px;
                     width: 16px;
                     height: 16px;
+                    colorize: #ffffff;
                     source: @image-url("assets/close-line.svg");
+                }
+                TouchArea {
+                    width: 40px;
+                    height: 40px;
+                    clicked => {
+                        root.go_back();
+                    }
                 }
             }
         }
@@ -40,24 +54,11 @@ export component DeviceLink inherits Window {
             y: 36.8px;
             width: 224.64px;
             height: 179px;
-            qr-code := Rectangle {
-                x: 64.32px;
-                y: 12px;
-                width: 96px;
-                height: 96px;
-                background: #d9d9d9;
-                border-radius: 2.56px;
-                qr := Text {
-                    x: 38.72px;
-                    y: 43.52px;
-                    text: "QR";
-                    color: #000000;
-                    font-family: "Instrument Sans";
-                    font-size: 12.8px;
-                    font-weight: 600;
-                    horizontal-alignment: center; 
-                }
-
+            qr-code := Image {
+                y: -10px;
+                width: 120px;
+                height: 120px;
+                source: qr_image;
             }
             frame-91 := Rectangle {
                 x: 72.32px;
@@ -72,17 +73,19 @@ export component DeviceLink inherits Window {
                     font-family: "Roboto Mono";
                     font-size: 10px;
                     font-weight: 500;
-                    horizontal-alignment: left; 
+                    horizontal-alignment: left;
                 }
                 joam-3m34 := Text {
                     x: 0;
                     y: 17px;
-                    text: "JOAM...3M34";
+                    text: root.device-id;
                     color: #ededed;
                     font-family: "Roboto Mono";
                     font-size: 12px;
                     font-weight: 700;
                     horizontal-alignment: center; 
+                    vertical-alignment: center;
+                    wrap: word-wrap;
                 }
             }
         }

@@ -1,4 +1,4 @@
-export component Sensor inherits Window {
+export component Sensor inherits Rectangle {
     x: 0;
     y: 0;
     callback go_back;
@@ -8,6 +8,7 @@ export component Sensor inherits Window {
         width: 32px;
         height: 32px;
         source: @image-url("assets/arrow-left-wide-line.svg");
+        colorize: white;
         TouchArea {
             clicked => {
                 root.go_back();

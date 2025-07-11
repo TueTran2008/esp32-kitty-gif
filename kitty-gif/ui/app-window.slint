@@ -1,4 +1,3 @@
-import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
 import {HomeLock} from "home-lock.slint";
 import {Home} from "home.slint";
 import {IoT} from "iot.slint";
@@ -6,23 +5,18 @@ import { TopBar } from "top-bar.slint";
 import {LoadingScreenText} from "loading-screen.slint";
 import {Sensor} from "sensors.slint";
 import {AI1} from "ai_screen_1.slint";
-import { Game } from "game.slint";
-import { DeviceLink } from "device-link.slint";
+import { Game,Animal,GameState,AnimationSwitch } from "game.slint";
+import { DeviceLink, DeviceQR } from "device-link.slint";
 import { DeviceLinkEd} from "device-linked.slint";
 import { DeviceLinkSucess } from "link-device-sucess.slint";
 import { WifiMenuBar } from "wifi-component.slint";
 import { WiFiConfig } from "wifi-config.slint";
 import { WifiScan } from "wifi-scan.slint";
+import { VirtualKeyboardHandler} from "virtual_keyboard.slint";
+import { ListView } from "std-widgets.slint";
+import { UpdateFW, UpdateFwCallback } from "update-fw.slint";
+export {VirtualKeyboardHandler}
 
-// export {
-//     Home,
-//     IoT,
-//     HomeLock,
-//     TopBar,
-//     DeviceLink,
-//     DeviceLinkEd,
-//     DeviceLinkSucess
-// }
 export enum ScreenState {
     HomeLock,
     Home,
@@ -37,29 +31,220 @@ export enum ScreenState {
     Setting,
     WifiMenuBar,
     WifiScan,
-    WiFiConfig
+    WiFiConfig,
+    WifiDisconnected,
+    UpdateFirmware,
 }
 
 export struct ScreenStatus {
 
 }
+export struct WiFiConnectParameters {
+    connected: bool,
+    ssid: string,
+    mac: string,
+}
 
+export {DeviceQR}
+
+export  {Animal, GameState, AnimationSwitch}
+export component WifiDisconnected inherits Window {
+    in-out property <WiFiConnectParameters> connected_parameter;
+    callback go_back;
+    frame-8 := Rectangle {
+        x: 0px;
+        y: 202px;
+        width: 240px;
+        height: 118px;
+        background: #1c1c1c;
+        frame-90 := Rectangle {
+            x: 8px;
+            y: 8px;
+            width: 224px;
+            height: 24px;
+            disconnect-okzoo-wifi := Text {
+                x: 8px;
+                y: 4.5px;
+                text: "Disconnect with" + connected_parameter.ssid;
+                color: #ededed;
+                font-family: "Roboto Mono";
+                font-size: 10px;
+                font-weight: 700;
+                horizontal-alignment: center; 
+            }
+            frame-96 := Image {
+                x: 200px;
+                y: 0px;
+                width: 24px;
+                height: 24px;
+                source: @image-url("assets/close-line.svg"); 
+                TouchArea {
+                    clicked => {
+                        root.go_back();
+                    }
+                }
+            }
+            mac:= Text {
+                x: 70.5px;
+                y: 48px;
+                text: connected_parameter.mac;
+                color: #ffffffcc;
+                font-family: "Roboto Mono";
+                font-size: 10px;
+                font-weight: 500;
+                horizontal-alignment: left; 
+            }
+        }
+        frame-110 := Rectangle {
+            x: 8px;
+            y: 79px;
+            width: 224px;
+            height: 31px;
+            background: #ff00001a;
+            disconnect-now := Text {
+                text: "Disconnect now";
+                color: #ff5240;
+                font-family: "Roboto Mono";
+                font-size: 10px;
+                font-weight: 500;
+                horizontal-alignment: center; 
+                vertical-alignment: center;
+            }
+        }
+    }
+}
+
+export  {UpdateFwCallback} 
 export component AppWindow inherits Window {
     preferred-height: 320px;
     preferred-width: 240px;
     background: #000000;
     in-out property <ScreenState> screen_state: HomeLock;
+    in-out property <WiFiConnectParameters> connected_status: {connected: true, ssid: "OK ZOO"};
+    in-out property <[string]> scanned_ssid;
     in property <image> current_frame;
+    in-out property <image> qr_image;
+    in-out property <bool> display_device_link: false;
+    in property <string> deviceID;
+    in-out property <GameState> game_action: GameState.Normal;
+    in-out property <Animal> game_animal: Animal.Chirplunk;
+    in-out property <string> fw_version;
+    in-out property <string> new_fw_version;
+
     TopBar {
         x: 0;
         y: 0;
     }
-
+    frame-114 := Rectangle {
+        visible: root.screen_state == ScreenState.WifiScan || root.screen_state == ScreenState.WifiDisconnected;
+        x: 12px;
+        y: 84px;
+        width: 216px;
+        height: 171px;
+        frame-112 := Rectangle {
+            x: 0px;
+            y: 0px;
+            width: 216px;
+            height: 31px;
+            background: #ffffff1a;
+            TouchArea {
+                clicked => {
+                    root.screen_state = ScreenState.WifiDisconnected;
+                }
+            }
+            frame-117 := Rectangle {
+                x: 12px;
+                y: 8px;
+                width: 108px;
+                height: 15px;
+                wifi-fill := Image {
+                    x: 0px;
+                    y: 1.5px;
+                    source: @image-url("assets/wifi-fill_empty.svg");
+                }
+                connect-ssid := Text {
+                    x: 16px;
+                    text: connected_status.ssid;
+                    color: #ffffff;
+                    font-family: "Roboto Mono";
+                    font-size: 10px;
+                    font-weight: 500;
+                    horizontal-alignment: left; 
+                }
+            }
+            connected_flag := Text {
+                x: 151px;
+                y: 8px;
+                visible: connected_status.connected;
+                text: "Connected";
+                color: #89dd47;
+                font-family: "Roboto Mono";
+                font-size: 10px;
+                font-weight: 500;
+                horizontal-alignment: left; 
+            }
+        }
+    }
+    list-wifi:= ListView {
+        visible: root.screen_state == ScreenState.WifiScan || root.screen_state == ScreenState.WifiDisconnected;
+        x: 12px;
+        y: 125px;
+        
+        for ssid[idx] in root.scanned_ssid: Rectangle {
+            width: 216px;
+            height: 30px;
+            background: #ffffff1a;
+            frame-list := Rectangle {
+                x: 12px;
+                y: 8px;
+                width: 108px;
+                height: 15px;
+                TouchArea {
+                    clicked => {
+                        root.screen_state = ScreenState.WiFiConfig
+                    }
+                }
+                wifi-fill-list := Image {
+                    x: 0px;
+                    y: 1.5px;
+                    width: 12px;
+                    height: 12px;
+                    source: @image-url("assets/wifi-fill_empty.svg");
+                }
+                Text {
+                    x: 16px;
+                    text: ssid;
+                    color: white;
+                    font-family: "Roboto Mono";
+                    font-size: 10px;
+                    font-weight: 500;
+                    horizontal-alignment: left; 
+                }
+            }
+        }
+    }
+    WifiDisconnected {
+        x: 0;
+        y: 0;
+        connected_parameter: connected_status;
+        visible: root.screen_state == ScreenState.WifiDisconnected;
+        go_back => {
+            root.screen_state = ScreenState.WifiScan;
+        }
+    }
     HomeLock {
         visible: root.screen_state == ScreenState.HomeLock;
         x: 0;
         y: 0;
         go_to_home_page => {
+            root.screen_state = ScreenState.Home;
+        }
+    }
+    IoT {
+        visible: root.screen_state == ScreenState.IOT;
+        x: 0;
+        y: 0;
+        go_back => { 
             root.screen_state = ScreenState.Home;
         }
     }
@@ -85,8 +270,13 @@ export component AppWindow inherits Window {
         go_to_setting => {
             root.screen_state = ScreenState.WifiMenuBar;
         }
+        device_link => {
+            display_device_link = true;
+        }
+        go_to_iot => {
+            root.screen_state = ScreenState.IOT;
+        }   
     }
-
     Sensor {
         x: 0;
         y: 0;
@@ -96,11 +286,16 @@ export component AppWindow inherits Window {
         }
     }
     Game {
+        game_state: root.game_action;
+        animal: root.game_animal;
         x: 0;
         y: 0;
         visible: root.screen_state == ScreenState.Game;
         go_back => {
             root.screen_state = ScreenState.Home;
+        }
+        display_device => {
+            display_device_link = true;
         }
     }
     AI1 {
@@ -121,13 +316,16 @@ export component AppWindow inherits Window {
         go_to_wifi => {
             root.screen_state = ScreenState.WifiScan;
         }
+        go_fw_update => {
+            root.screen_state = ScreenState.UpdateFirmware;
+        }
     }
     WifiScan {
         x: 0;
         y: 0;
         visible: root.screen_state == ScreenState.WifiScan;
         go_back => {
-            root.screen_state = ScreenState.Home;
+            root.screen_state = ScreenState.WifiMenuBar;
         }
         go_wifi_config => {
             root.screen_state = ScreenState.WiFiConfig;
@@ -137,6 +335,28 @@ export component AppWindow inherits Window {
         x: 0;
         y: 0;
         visible: root.screen_state == ScreenState.WiFiConfig;
+        go_back_wifi_scan => {
+            root.screen_state = ScreenState.WifiScan;
+        }
+    }
+    UpdateFW {
+        x: 0;
+        y: 0;
+        firmware_version: root.fw_version;
+        visible: root.screen_state == ScreenState.UpdateFirmware;
+        go_back => {
+            root.screen_state = ScreenState.WifiScan;
+        }
+    }
+    DeviceLink {
+        x: 0;
+        y: 0;
+        device-id: root.deviceID;
+        qr_image: root.qr_image;
+        visible: root.display_device_link == true;
+        go_back => {
+            root.display_device_link = false;
+        }
     }
 }
 
@@ -304,6 +524,7 @@ export component OldApp inherits Window {
             }
         }
     }
+
     current_time: "09:42";
     preferred-height: 320px;
     preferred-width: 240px; 

@@ -1,17 +1,23 @@
 import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
 
 struct StatusData {
-    wifi_signal: int,
+    wifi-signal: string,
     time: string,
     battery: string,
 }
-export component TopBar inherits Window {
+export component TopBar inherits Rectangle {
+    height: 32px;
+    width: 240px;
     top-bar := Rectangle {
         x: 0;
         y: 0;
         width: 240px;
         height: 36px;
-        in property <StatusData> status;
+        in property <StatusData> status : {
+            wifi_signal: "02",
+            time: "09:41",
+            battery: "95%",
+        };
         frame-51 := Rectangle {
             x: 12px;
             y: 12px;
@@ -20,6 +26,8 @@ export component TopBar inherits Window {
             signal-wifi-2-fill := Image {
                 x: 0;
                 y: 0;
+                horizontal-alignment: ImageHorizontalAlignment.center;
+                colorize: #ffffff;
                 source: @image-url("assets/wifi.svg");
             }
             frame-2 := Rectangle {
@@ -27,10 +35,10 @@ export component TopBar inherits Window {
                 y: 0px;
                 width: 26px;
                 height: 12px;
-                
                 mind-map := Image {
                     x: 0px;
                     y: 0px;
+                    colorize: #ffffff;
                     source: @image-url("assets/mind-map.svg");
                 }
                 _02 := Text {
@@ -63,7 +71,10 @@ export component TopBar inherits Window {
             battery-fill := Image {
                 x: 48.44px;
                 y: 0px;
+                width: 12px;
+                height: 12px;
                 source: @image-url("assets/battery-fill.svg");
+                colorize: #ffffff;
             }
             battery_text := Text {
                 x: 63px;

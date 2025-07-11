@@ -39,11 +39,12 @@ export component Circle {
     }
 }
 
-export component IoT inherits Window{
+export component IoT inherits Rectangle{
     width: 240px;
     height: 240px;
     x: 0px;
     y: 80px;
+    callback go_back();
     frame-88 := Rectangle {
         x: 7.68px;
         y: 35.84px;
@@ -55,6 +56,14 @@ export component IoT inherits Window{
         y: 36px;
         width: 32px;
         height: 32px;
+        colorize: white;
+        TouchArea {
+            height: 64px;
+            width: 64px;
+            clicked => { 
+                root.go_back();
+            }
+        }
         source: @image-url("assets/arrow-left-wide-line.svg");
     }
     sv := Flickable {

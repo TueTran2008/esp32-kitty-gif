@@ -1,11 +1,21 @@
 mod bring_up;
 mod error;
 mod ui;
+mod ota;
 use bring_up::init_window;
 
-mod cat_dance_frames;
-mod cat_eating_frames;
-mod cat_playing_frames;
+mod lunafluff_4_eat_rgba8;
+mod lunafluff_4_jump_rgba8;
+mod lunafluff_4_sit_rgba8;
+mod lunafluff_4_sleep_rgba8;
+mod chirplunk_3_eat_rgba8;
+mod chirplunk_3_jump_rgba8;
+mod chirplunk_3_sit_rgba8;
+mod chirplunk_3_sleep_rgba8;
+mod mechapup_3_eat_rgba8;
+mod mechapup_3_jump_rgba8;
+mod mechapup_3_sit_rgba8;
+mod mechapup_3_sleep_rgba8;
 
 // Frame data structure
 #[derive(Clone)]
@@ -15,7 +25,12 @@ pub struct FrameData {
     pub width: u16,
     pub height: u16,
 }
-
+pub struct RgbaFrameData {
+    pub data: &'static [u8],
+    pub delay_ms: u32,
+    pub width: u16,
+    pub height: u16,
+}
 fn main() {
     // It is necessary to call this function once. Otherwise some patches to the runtime
     // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
@@ -25,10 +40,7 @@ fn main() {
     esp_idf_svc::log::EspLogger::initialize_default();
 
     log::info!("Hello, world From Darwin!");
-    // let _ret = init_lcd();
 
-    
     init_window();
-
     // Ok(())
 }
