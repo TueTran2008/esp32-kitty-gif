@@ -12,7 +12,7 @@ component VirtualKeyboardButton {
     callback key-pressed(/* key */ string);
 
     min-width: 12px;
-    min-height: 12px;
+    min-height: 32px;
     horizontal-stretch: 0;
 
     states [
@@ -91,7 +91,7 @@ export global VirtualKeyboardHandler {
                 { key: "h", shift-key: "H" },
                 { key: "j", shift-key: "J" },
                 { key: "k", shift-key: "K" },
-                { key: "l", shift-key: "L" }
+                { key: "l", shift-key: "L" },
             ],
             [
                 { key: "z", shift-key: "Z" },
@@ -174,10 +174,10 @@ export component VirtualKeyboard  {
 
     i-layout := VerticalLayout {
         padding: 4px;
-        spacing: 2px;
+        spacing: 1px;
 
         for row[index] in VirtualKeyboardHandler.keys : HorizontalLayout {
-            spacing: 4px;
+            spacing: 1px;
 
             if (index == 0) : VirtualKeyboardButton {
                 key: "ESC";
@@ -218,6 +218,7 @@ export component VirtualKeyboard  {
 
                 key-pressed => {
                     VirtualKeyboardHandler.key-pressed(Key.Backspace);
+                    debug("back space pressed");
                 }
             }
 
@@ -226,6 +227,7 @@ export component VirtualKeyboard  {
 
                 key-pressed => {
                     VirtualKeyboardHandler.key-pressed(Key.Return);
+                    debug("retrun pressed");
                 }
             }
 

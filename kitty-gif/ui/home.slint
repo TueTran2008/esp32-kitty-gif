@@ -1,5 +1,10 @@
 import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
 import { TopBar } from "top-bar.slint";
+
+export global LocationCallback {
+    pure callback set_country() -> string;
+    pure callback set_city() -> string;
+}
 export component Home inherits Rectangle {
     in property <string> time;
     callback go_to_sensor;
@@ -82,7 +87,7 @@ export component Home inherits Rectangle {
                         font-family: "Roboto Mono";
                         font-size: 9px;
                         font-weight: 400;
-                        horizontal-alignment: left; 
+                        horizontal-alignment: left;
                     }
                     country: "Japan";
                 }

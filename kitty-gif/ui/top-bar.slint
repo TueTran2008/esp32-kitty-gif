@@ -10,7 +10,7 @@ export component TopBar inherits Rectangle {
     width: 240px;
     top-bar := Rectangle {
         x: 0;
-        y: 0;
+        y: -2px;
         width: 240px;
         height: 36px;
         in property <StatusData> status : {
@@ -26,7 +26,7 @@ export component TopBar inherits Rectangle {
             signal-wifi-2-fill := Image {
                 x: 0;
                 y: 0;
-                horizontal-alignment: ImageHorizontalAlignment.center;
+                //horizontal-alignment: ImageHorizontalAlignment.center;
                 colorize: #ffffff;
                 source: @image-url("assets/wifi.svg");
             }
@@ -43,7 +43,7 @@ export component TopBar inherits Rectangle {
                 }
                 _02 := Text {
                     x: 14px;
-                    y: 1px;
+                    y: -1px;
                     text: status.wifi-signal;
                     color: #89dd47;
                     font-family: "Roboto Mono";

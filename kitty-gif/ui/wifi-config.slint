@@ -25,6 +25,7 @@ export component WiFiConfig {
             y: 1.5px;
             width: 12px;
             height: 12px;
+            colorize: white;
             source: @image-url("assets/wifi-fill.svg");
         }
         okzoo-wifi := Text {
@@ -38,7 +39,7 @@ export component WiFiConfig {
         }
     }
     frame-121 := Rectangle {
-        x: 10px;
+        x: 00px;
         y: 76px;
         width: 218px;
         height: 50px;
@@ -46,8 +47,7 @@ export component WiFiConfig {
         frame-120 := TextInput {
             x: 10px;
             width: 218px;
-            height: 50px;
-            text: "Input";
+            height: 60px;
             color: #ffffff66;
             font-family: "Roboto Mono";
             font-size: 10px;
@@ -56,9 +56,11 @@ export component WiFiConfig {
             vertical-alignment: center;
         }
         VirtualKeyboard { 
+            width: 240px;
+            height: 150px;
             visible: TextInputInterface.text-input-focused;
             x: 0;
-            y: 140px; 
+            y: 110px; 
         }
         // FocusScope {}
         // if TextInputInterface.text-input-focused: VirtualKeyboard {
