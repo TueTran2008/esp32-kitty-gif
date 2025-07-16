@@ -21,17 +21,18 @@ export component WifiScan {
             width: 32px;
             height: 32px;
             background: #ffffff1a;
-            TouchArea {
-                clicked => {
-                    root.go_back();
-                }
-            }
             arrow-left-wide-line := Image {
                 x: 8px;
                 y: 8px;
                 width: 16px;
                 height: 16px;
+                colorize:  white;
                 source: @image-url("assets/arrow-left-wide-line.svg");
+            }
+            TouchArea {
+                clicked => {
+                    root.go_back();
+                }
             }
         }
         settings := Text {

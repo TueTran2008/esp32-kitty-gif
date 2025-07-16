@@ -1,5 +1,5 @@
 import {HomeLock} from "home-lock.slint";
-import {Home} from "home.slint";
+import {Home, LocationCallback} from "home.slint";
 import {IoT} from "iot.slint";
 import { TopBar } from "top-bar.slint";
 import {LoadingScreenText} from "loading-screen.slint";
@@ -45,7 +45,7 @@ export struct WiFiConnectParameters {
     mac: string,
 }
 
-export {DeviceQR}
+export {DeviceQR, LocationCallback}
 
 export  {Animal, GameState, AnimationSwitch}
 export component WifiDisconnected inherits Window {
@@ -77,6 +77,7 @@ export component WifiDisconnected inherits Window {
                 y: 0px;
                 width: 24px;
                 height: 24px;
+                colorize: white;
                 source: @image-url("assets/close-line.svg"); 
                 TouchArea {
                     clicked => {
@@ -114,6 +115,9 @@ export component WifiDisconnected inherits Window {
     }
 }
 
+export global WiFiScan {
+    pure callback activate_wifi_scan();
+}
 export  {UpdateFwCallback} 
 export component AppWindow inherits Window {
     preferred-height: 320px;
@@ -121,7 +125,7 @@ export component AppWindow inherits Window {
     background: #000000;
     in-out property <ScreenState> screen_state: HomeLock;
     in-out property <WiFiConnectParameters> connected_status: {connected: true, ssid: "OK ZOO"};
-    in-out property <[string]> scanned_ssid;
+    in-out property <[string]> scanned_ssid: ["Hehe"];
     in property <image> current_frame;
     in-out property <image> qr_image;
     in-out property <bool> display_device_link: false;
@@ -189,7 +193,6 @@ export component AppWindow inherits Window {
         visible: root.screen_state == ScreenState.WifiScan || root.screen_state == ScreenState.WifiDisconnected;
         x: 12px;
         y: 125px;
-        
         for ssid[idx] in root.scanned_ssid: Rectangle {
             width: 216px;
             height: 30px;
@@ -315,6 +318,7 @@ export component AppWindow inherits Window {
         }
         go_to_wifi => {
             root.screen_state = ScreenState.WifiScan;
+            WiFiScan.activate_wifi_scan();
         }
         go_fw_update => {
             root.screen_state = ScreenState.UpdateFirmware;
@@ -337,6 +341,7 @@ export component AppWindow inherits Window {
         visible: root.screen_state == ScreenState.WiFiConfig;
         go_back_wifi_scan => {
             root.screen_state = ScreenState.WifiScan;
+            
         }
     }
     UpdateFW {
@@ -358,174 +363,4 @@ export component AppWindow inherits Window {
             root.display_device_link = false;
         }
     }
-}
-
-export component OldApp inherits Window {
-    in property <image> current_frame;
-    in property <string> current_time;
-    background: #000000;
-
-    Image {
-        y: 61px;
-        x: 43px;
-        source: current_frame;
-        width: 160px;
-        height: 160px;
-    }
-    
-    HorizontalLayout {
-        x: 0;
-        y: 0;
-        width: 240px;
-        height: 28px;
-        padding-bottom: 8px;
-        padding-right: 12px;
-        padding-top: 8px;
-        padding-left: 12px;
-        spacing: 8px;
-        vertical-stretch: 0;
-        alignment: LayoutAlignment.space-around;
-        horizontal-stretch: 0;
-        max-width: 0px;
-        min-width: 0px;
-        HorizontalLayout {
-            width: 88.5px;
-            alignment: LayoutAlignment.start;
-            height: 12px;
-            spacing: 8px;
-            padding-left: 0;
-            Image {
-                source: @image-url("assets/wifi.svg");
-            }
-            HorizontalLayout {
-                spacing: 4px;
-                width: 26px;
-                height: 12px;
-                Image {
-                    source: @image-url("assets/mind-map.svg");
-                }
-                in property <string> signal;
-                Text {
-                    font-family: "Instrument Sans";
-                    font-weight: 500;
-                    vertical-alignment: center;
-                    text: signal;
-                    font-size: 8px;
-                    color: #89DD47;
-                    letter-spacing: 0px;
-                }
-                signal: "10";
-            }
-        }
-
-        HorizontalLayout {
-            alignment: LayoutAlignment.end;
-            spacing: 4px;
-            width: 88px;
-            height: 12px;
-            in property <string> battery_percent;
-            Image {
-                source: @image-url("assets/battery-fill.svg");
-                vertical-alignment: center;
-            }
-            Text {
-                font-family: "Instrument Sans";
-                text: battery_percent;
-                font-size: 8px;
-                color: #FFFFFF;
-                font-weight: 500;
-                vertical-alignment: center;
-            }
-            battery_percent: "95%";
-        }
-    }
-
-    Text {
-        y: 10px;
-        x: 108.5px;
-        font-family: "Instrument Sans";
-        text: current_time;
-        font-italic: false;
-        font-size: 8px;
-        color: white;
-        font-weight: 500;
-        horizontal-alignment: TextHorizontalAlignment.center;
-    }
-    
-    HorizontalLayout {
-        x: 12.3px;
-        y: 54.4px;
-        width: 214px;
-        height: 48px;
-        spacing: 14.72px;
-        alignment: LayoutAlignment.stretch;
-        VerticalLayout {
-            alignment: LayoutAlignment.space-around;
-            width: 26px;
-            height: 27px;
-            in property <int> day; // 10, 20, ..
-            in property <string> week_day; // MON, TUE, FRI,...
-            Text {
-                font-family: "Instrument Sans";
-                horizontal-alignment: center;
-                color: #FFFFFF;
-                text: week_day;
-                vertical-alignment: TextVerticalAlignment.center;
-                font-size: 10px;
-                font-weight: 400;
-            }
-            vertical-stretch: 0;
-            week_day: "FRI";
-            Text {
-                horizontal-alignment: center;
-                color: #F9C22B;
-                text: day;
-                font-size: 20px;
-                font-weight: 400;
-            }
-            day: 20;
-        }
-        Text {
-            width: 174px;
-            height: 48px;
-            horizontal-alignment: TextHorizontalAlignment.left;
-            font-weight: 400;
-            text: current_time;
-            vertical-alignment: TextVerticalAlignment.center;
-            font-size: 56px;
-            color: #FFFFFF;
-        }
-    }
-
-
-    SwipeGestureHandler {
-        height: 105px;
-        width: 240px;
-        x: 0px;
-        y: root.height - self.height;
-        HorizontalLayout {
-            
-            x: 60.8px;
-            y: 66.56px;
-            width: 119.04px;
-            alignment: LayoutAlignment.space-between;
-            height: 15.36px;
-            spacing: 7.68px;
-            Text {
-                font-family: "Instrument Sans";
-                text: "Swipe up to start";
-                font-size: 12px;
-                color: #FFFFFF;
-            }
-            Image {
-                horizontal-alignment: ImageHorizontalAlignment.center;
-                image-fit: ImageFit.preserve;
-                source: @image-url("assets/arrow-up-double-line.svg");
-            }
-        }
-    }
-
-    current_time: "09:42";
-    preferred-height: 320px;
-    preferred-width: 240px; 
 }

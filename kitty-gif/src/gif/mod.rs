@@ -1,0 +1,12 @@
+pub mod lunafluff_4_eat_rgba8;
+pub mod lunafluff_4_jump_rgba8;
+pub mod lunafluff_4_sit_rgba8;
+pub mod lunafluff_4_sleep_rgba8;
+pub mod chirplunk_3_eat_rgba8;
+pub mod chirplunk_3_jump_rgba8;
+pub mod chirplunk_3_sit_rgba8;
+pub mod chirplunk_3_sleep_rgba8;
+pub mod mechapup_3_eat_rgba8;
+pub mod mechapup_3_jump_rgba8;
+pub mod mechapup_3_sit_rgba8;
+pub mod mechapup_3_sleep_rgba8;

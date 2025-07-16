@@ -56,7 +56,7 @@ pub fn generate_rgba8_frames() -> Result<(), Box<dyn std::error::Error>> {
 
         if path.is_file() && path.extension().map_or(false, |ext| ext == "gif") {
             let file_stem = path.file_stem().unwrap().to_str().unwrap().to_lowercase();
-            let out_path = format!("src/{}_rgba8.rs", file_stem);
+            let out_path = format!("src/gif/{}_rgba8.rs", file_stem);
             println!("Processing RGBA8 {:?}", path);
 
             let input = File::open(&path)?;
@@ -130,7 +130,6 @@ pub fn generate_rgba8_frames() -> Result<(), Box<dyn std::error::Error>> {
             println!("Generated {} RGBA8 frames for {:?}", frames.len(), file_stem);
         }
     }
-
     Ok(())
 }
 
@@ -163,7 +162,7 @@ fn generate_qr_code() {
     let mac = "11:22:33:44:55:66";
     let input_sha = format!("{}-{}-{}", DEVICE_ID, SEERET_KEY, "1751897409");
     let val = digest(input_sha.clone());
-    let data_qr = format!("{}-{}-{}-{}", DEVICE_ID, "1751897409", mac, val);
+    //let data_qr = format!("{}-{}-{}-{}", DEVICE_ID, "1751897409", mac, val);
     //let result = qrcode_generator::to_png_to_vec(&[DEVICE_ID, "1751897409", &mac, &val].concat(), QrCodeEcc::Low, 512).unwrap();
     let result = QrCode::encode_text(&[DEVICE_ID, "1751897409", mac, &val].concat(), QrCodeEcc::High).unwrap();
     let svg = to_svg_string(&result, 4);

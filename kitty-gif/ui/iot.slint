@@ -67,6 +67,27 @@ export component IoT inherits Rectangle{
         source: @image-url("assets/arrow-left-wide-line.svg");
     }
     sv := Flickable {
+        in-out property<length> value <=> self.viewport-y;
+        interactive: false;
+        temp_touch := TouchArea {
+            property <length> pressed-value;
+
+            pointer-event(event) => {
+                /*Removing or adding this doesn't change a thing: event.button == PointerEventButton.left && */
+                if (event.kind == PointerEventKind.down) {                                            
+                    self.pressed-value = parent.value;
+                }
+            }
+            moved => {
+                if (self.enabled && self.pressed) {
+                    parent.value = min(0, self.pressed-value + (self.mouse-y - self.pressed-y));
+                        // Don't scroll more down than the list is high.
+                        //max(-pa.height - timespan_scroll.height),
+                        // Don't scroll more up than topmost.
+                        
+                }
+            }
+        }
         y: 80px;
         opacity: 100%;
         viewport-height: 527px;

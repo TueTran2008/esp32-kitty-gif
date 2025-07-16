@@ -1,21 +1,13 @@
+#[macro_use]
+mod macros;
+
 mod bring_up;
 mod error;
 mod ui;
 mod ota;
 use bring_up::init_window;
 
-mod lunafluff_4_eat_rgba8;
-mod lunafluff_4_jump_rgba8;
-mod lunafluff_4_sit_rgba8;
-mod lunafluff_4_sleep_rgba8;
-mod chirplunk_3_eat_rgba8;
-mod chirplunk_3_jump_rgba8;
-mod chirplunk_3_sit_rgba8;
-mod chirplunk_3_sleep_rgba8;
-mod mechapup_3_eat_rgba8;
-mod mechapup_3_jump_rgba8;
-mod mechapup_3_sit_rgba8;
-mod mechapup_3_sleep_rgba8;
+mod gif;
 
 // Frame data structure
 #[derive(Clone)]
