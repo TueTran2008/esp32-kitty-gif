@@ -66,10 +66,10 @@ use embedded_svc::{
 
 const DEVICE_ID: &str = "58db0095571ee686bdc5cfa3a7368eb9";
 const SEERET_KEY: &str = "0bffd683ac83273d91c1d82d89f9d786";
-
+const DISPLAY_WIDTH: u32 = 240;
 static BUFFER: StaticCell<[u8; 512]> = StaticCell::new();
-const SSID: &str = "okzoo";
-const PASSWORD: &str = "123456789";
+const SSID: &str = "TUE";
+const PASSWORD: &str = "Gemtek@123";
 
 // Frame data structure
 // Animation controller
@@ -96,8 +96,6 @@ struct IpAPIResponse{
   org: String,
   r#as: String
 }
-
-
 
 impl AnimationController {
     fn new(frames: &'static [RgbaFrameData]) -> Self {
@@ -347,7 +345,7 @@ pub fn init_window() {
     }
     let power_manager_thread = thread::spawn(move || {
         loop {
-            log::info!("Thread 1: running...");
+            //log::info!("Thread 1: running...");
             if pwr_status.is_low() {
                 FreeRtos::delay_ms(20);
                 let mut counter_delay: u16 = 0;
@@ -376,17 +374,20 @@ pub fn init_window() {
     let mosi = peripherals.pins.gpio45; //
     let miso = peripherals.pins.gpio46;
     let cs = peripherals.pins.gpio42; //MTDI
-    let config = Config::new().baudrate(26.MHz().into());
+    let config = Config::new().baudrate(40.MHz().into());
     // Define the delay struct, needed for the display driver
-    let mut delay = Ets;
+    //let mut delay = Ets;
+    let mut display_delay = Delay::new(500_000u32);
+    //display_delay.delay_ns(500_000u32);
     // Define the Data/Command select pin as a digital output
+    let spi_config = SpiDriverConfig::new().dma(esp_idf_hal::spi::Dma::Auto(4096 as usize));
     let spi_device = SpiDeviceDriver::new_single(
         spi,
         sclk,
         mosi,
         Some(miso),
         Some(cs),
-        &SpiDriverConfig::new(),
+        &spi_config,
         &config,
     ).unwrap();
     let buffer = BUFFER.init([0; 512]);
@@ -398,7 +399,7 @@ pub fn init_window() {
     let mut display = Builder::new(ST7789, di)
         .reset_pin(rst)
         .color_order(ColorOrder::Rgb).invert_colors(ColorInversion::Inverted)
-        .init(&mut delay)
+        .init(&mut display_delay)
         .unwrap();
 
     /////////////////////////////////// Touch peripheral init
@@ -415,7 +416,8 @@ pub fn init_window() {
     let mut touch = Cst328::new(bus.acquire_i2c(), delay_source);
     touch.reset(&mut touch_rst, &mut delay_source).unwrap();
 
-    let mut line_buffer = [slint::platform::software_renderer::Rgb565Pixel(0); 320];
+    let mut line_buffer_1 = [slint::platform::software_renderer::Rgb565Pixel(0); DISPLAY_WIDTH as usize];
+    let mut line_buffer_2 = [slint::platform::software_renderer::Rgb565Pixel(0); DISPLAY_WIDTH as usize];
 
     //Create animation controller with pre-processed frames
     let controller = Rc::new(RefCell::new(AnimationController::new(&CHIRPLUNK_3_SIT_RGBA8_FRAMES)));
@@ -635,10 +637,13 @@ pub fn init_window() {
         //Rendering 320x240 takes more than 200ms :(, which is suck
         
         window.draw_if_needed(|renderer| {
+            let render_start = Instant::now();
             renderer.render_by_line(DisplayWrapper {
                 display: &mut display,
-                line_buffer: &mut line_buffer,
+                line_buffer: &mut line_buffer_1,
             });
+            let render_duration = render_start.elapsed();
+            log::info!("Render time: {:?}", render_duration);
         });
         // if window.has_active_animations() {
         //     continue;

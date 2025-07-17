@@ -32,6 +32,7 @@ esp-idf-hal = { version = "0.45.2"}
 display-interface-spi = "0.5.0"
 thiserror = "2.0.12"
 embedded-graphics = "0.8.0"
+embedded-graphics-core = "0.4.0"
 embedded-svc = "0.28.1"
 static_cell = "2.1.1"
 cst816s-rs = { path = "/home/dawrintran/Desktop/cst816s",   features = [
@@ -56,7 +57,7 @@ image = "0.25.6"
 sha256 = "1.6.0"
 qrcodegen = "1.8.0"
 embuild = "0.33"
-slint-build = "1.8.0"
+slint-build = "1.12.0"
 gif = "0.13.3"
 
 [dev-dependencies]
