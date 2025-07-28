@@ -72,3 +72,4 @@ async-io = "2"
 ESP_IDF_SDKCONFIG_DEFAULTS = { value = "sdkconfig.defaults", relative = true }
 ESP_IDF_PARTITION_TABLE = { value = "partitions.csv", relative = true }
 
+

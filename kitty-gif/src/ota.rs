@@ -20,6 +20,7 @@ const FIRMWARE_MAX_SIZE: usize = 1024 * 1024 * 6;
 const FIRMWARE_MIN_SIZE: usize = size_of::<FirmwareInfo>() + 1024;
 const FIRMWARE_VERSION_CHECK_URL: &str = "http://okzoov2-api-dev.oozoo.dev/device/check-sum";
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct OtaOKZooInfo {
     success: bool,
@@ -30,7 +31,6 @@ struct OtaOKZooInfo {
 #[derive(Serialize, Deserialize, Debug)]
 struct OtaData {
     version: String,
-
     #[serde(rename = "fileLink")]
     file_link: String
 }

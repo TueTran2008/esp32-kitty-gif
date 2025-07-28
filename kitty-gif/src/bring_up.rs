@@ -1,10 +1,10 @@
 use std::cell::RefCell;
 //use std::fmt::format;
+use crate::ui::Esp32Platform;
+use esp_idf_hal::delay::{Delay, Ets, FreeRtos};
 use std::rc::Rc;
 use std::sync::Mutex;
 use std::thread;
-use crate::ui::MyPlatform;
-use esp_idf_hal::delay::{Delay, Ets, FreeRtos};
 //use esp_idf_hal::gpio::{Gpio39, Gpio41};
 use esp_idf_hal::i2c::{I2cConfig, I2cDriver};
 use esp_idf_hal::sys::{esp_get_free_heap_size, EspError};
@@ -16,31 +16,31 @@ use esp_idf_hal::{
 use esp_idf_svc::hal::gpio::{Output, PinDriver};
 use esp_idf_svc::hal::spi::SpiDriver;
 use mipidsi::interface::SpiInterface;
-use mipidsi::models::{ST7789};
+use mipidsi::models::ST7789;
 use mipidsi::Builder;
-use slint::platform::software_renderer::{MinimalSoftwareWindow};
+use slint::platform::software_renderer::MinimalSoftwareWindow;
 use slint::platform::{PointerEventButton, WindowEvent};
 slint::include_modules!();
 use crate::ui::DisplayWrapper;
 use mipidsi::options::{ColorInversion, ColorOrder};
-use slint::{ComponentHandle, Image, ModelRc, Rgba8Pixel, SharedPixelBuffer, SharedString, VecModel};
+use slint::{
+    ComponentHandle, Image, ModelRc, Rgba8Pixel, SharedPixelBuffer, SharedString, VecModel, SetPlatformError
+};
 use static_cell::StaticCell;
 use std::time::{Duration, Instant};
 ////////
 use cst816s::Cst328;
-use esp_idf_hal::{i2c};
+use esp_idf_hal::i2c;
 // WiFi
-use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
-use esp_idf_svc::wifi::*;
-use crate::RgbaFrameData;
 use crate::ota::*;
+use crate::RgbaFrameData;
+use esp_idf_svc::wifi::*;
+use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
+use hmac::{Hmac, Mac};
+use image::EncodableLayout;
 use qrcodegen::QrCode;
 use qrcodegen::QrCodeEcc;
-use sha256::{digest};
-use sha2::{Sha256, Digest};
-use image::{EncodableLayout, ImageBuffer, Rgb, Rgba};
-use hmac::{Hmac, Mac};
-
+use sha2::Sha256;
 use crate::gif::chirplunk_3_eat_rgba8::CHIRPLUNK_3_EAT_RGBA8_FRAMES;
 use crate::gif::chirplunk_3_jump_rgba8::CHIRPLUNK_3_JUMP_RGBA8_FRAMES;
 use crate::gif::chirplunk_3_sit_rgba8::CHIRPLUNK_3_SIT_RGBA8_FRAMES;
@@ -54,8 +54,8 @@ use crate::gif::mechapup_3_jump_rgba8::MECHAPUP_3_JUMP_RGBA8_FRAMES;
 use crate::gif::mechapup_3_sit_rgba8::MECHAPUP_3_SIT_RGBA8_FRAMES;
 use crate::gif::mechapup_3_sleep_rgba8::MECHAPUP_3_SLEEP_RGBA8_FRAMES;
 
-use serde::{Serialize, Deserialize};
-use esp_idf_svc::{http::client::EspHttpConnection};
+use esp_idf_svc::http::client::EspHttpConnection;
+use serde::{Deserialize, Serialize};
 
 use embedded_svc::{
     http::{client::Client as HttpClient, Method},
@@ -79,22 +79,26 @@ struct AnimationController {
     is_playing: bool,
     frames: &'static [RgbaFrameData],
 }
+
+#[allow(dead_code)]
 #[derive(serde::Deserialize)]
-struct IpAPIResponse{
-  query: String,
-  status: String,
-  country: String,
-  countryCode: String,
-  region: String,
-  regionName: String,
-  city: String,
-  zip: String,
-  lat: f32,
-  lon: f32,
-  timezone: String,
-  isp: String,
-  org: String,
-  r#as: String
+struct IpAPIResponse {
+    query: String,
+    status: String,
+    country: String,
+    #[serde(rename = "countryCode")]
+    country_code: String,
+    region: String,
+    #[serde(rename = "regionName")]
+    region_name: String,
+    city: String,
+    zip: String,
+    lat: f32,
+    lon: f32,
+    timezone: String,
+    isp: String,
+    org: String,
+    r#as: String,
 }
 
 impl AnimationController {
@@ -112,7 +116,7 @@ impl AnimationController {
         self.last_frame_time = Instant::now();
         //println!("Start animation controller");
     }
-#[warn(dead_code)]
+    #[warn(dead_code)]
     fn stop(&mut self) {
         self.is_playing = false;
     }
@@ -163,9 +167,8 @@ fn rgb565_to_rgba8(rgb565_data: &[u16], width: u16, height: u16) -> Vec<u8> {
     rgba_data
 }
 
-
 /// Send an HTTP GET request.
-fn get_request() -> Result<IpAPIResponse, ()>{
+fn get_request() -> Result<IpAPIResponse, ()> {
     // Prepare headers and URL
     let mut client = HttpClient::wrap(EspHttpConnection::new(&Default::default()).unwrap());
     let headers = [("accept", "text/plain")];
@@ -182,18 +185,21 @@ fn get_request() -> Result<IpAPIResponse, ()>{
     let status = response.status();
     log::info!("<- {status}");
     let mut buf = [0u8; 1024];
-    let bytes_read = io::try_read_full(&mut response, &mut buf).map_err(|e| e.0).unwrap();
+    let bytes_read = io::try_read_full(&mut response, &mut buf)
+        .map_err(|e| e.0)
+        .unwrap();
     log::info!("Read {bytes_read} bytes");
     match std::str::from_utf8(&buf[0..bytes_read]) {
         Ok(body_string) => {
             log::info!(
-            "Response body (truncated to {} bytes): {:?}",
-            buf.len(),
-            body_string);
-            let ip_api:IpAPIResponse =  serde_json::from_str(body_string).unwrap();
+                "Response body (truncated to {} bytes): {:?}",
+                buf.len(),
+                body_string
+            );
+            let ip_api: IpAPIResponse = serde_json::from_str(body_string).unwrap();
             return Ok(ip_api);
-        },
-        Err(e) => { 
+        }
+        Err(e) => {
             log::error!("Error decoding response body: {e}");
             return Err(());
         }
@@ -202,7 +208,6 @@ fn get_request() -> Result<IpAPIResponse, ()>{
 
 // Create Slint image from frame data
 fn create_slint_image_from_frame(frame: &RgbaFrameData) -> Image {
-    
     let buffer = SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
         &frame.data,
         frame.width as u32,
@@ -253,7 +258,8 @@ pub fn qr_to_slint_image(qr: &QrCode, scale: u32, border: u32) -> Image {
     }
 
     // Create SharedPixelBuffer from raw pixel data
-    let buffer = SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(pixels.as_bytes(), img_size, img_size);
+    let buffer =
+        SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(pixels.as_bytes(), img_size, img_size);
 
     Image::from_rgba8(buffer)
 }
@@ -264,7 +270,7 @@ fn qr_convert_to_rgba8(monochrome: &[u8], width: usize, height: usize) -> Vec<u8
     for &pixel in monochrome {
         // Assume 0 = black, anything else = white
         let (r, g, b, a) = if pixel == 0 {
-            (0, 0, 0, 255)     // Black
+            (0, 0, 0, 255) // Black
         } else {
             (255, 255, 255, 255) // White
         };
@@ -275,8 +281,8 @@ fn qr_convert_to_rgba8(monochrome: &[u8], width: usize, height: usize) -> Vec<u8
     rgba
 }
 fn hmac_sha256_hex_short(key: &str, message: &str) -> String {
-    let mut mac = Hmac::<Sha256>::new_from_slice(key.as_bytes())
-        .expect("HMAC can take key of any size");
+    let mut mac =
+        Hmac::<Sha256>::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
 
     mac.update(message.as_bytes());
 
@@ -293,12 +299,14 @@ fn hmac_sha256_hex_short(key: &str, message: &str) -> String {
 
     short
 }
-fn generate_qr_code(mac: &[u8;6]) -> Image {
-    let mac_str = format!("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+fn generate_qr_code(mac: &[u8; 6]) -> Image {
+    let mac_str = format!(
+        "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
+        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
+    );
     let input_sha = format!("{}-{}-{}", DEVICE_ID, "1751897409", mac_str);
 
     let hash = hmac_sha256_hex_short(SEERET_KEY, &input_sha);
-
 
     let data_qr = format!("{}{}{}{}", DEVICE_ID, "1751897409", mac_str, hash);
     log::info!("{}", data_qr);
@@ -306,29 +314,44 @@ fn generate_qr_code(mac: &[u8;6]) -> Image {
     let result = QrCode::encode_text(&data_qr, QrCodeEcc::High).unwrap();
     qr_to_slint_image(&result, 2, 4)
 }
+
+fn short_device_id(id: &str) -> String {
+    if id.len() >= 8 {
+        format!("{}...{}", &id[..4], &id[id.len() - 4..])
+    } else {
+        id.to_string() // Return as-is if too short
+    }
+}
+
 pub fn init_window() {
-    let peripherals = Peripherals::take().unwrap();
-    let window = MinimalSoftwareWindow::new(slint::platform::software_renderer::RepaintBufferType::ReusedBuffer);
+    let peripherals = Rc::new(RefCell::new(Peripherals::take().unwrap()));
+    let window = MinimalSoftwareWindow::new(
+        slint::platform::software_renderer::RepaintBufferType::ReusedBuffer,
+    );
     let sys_loop = EspSystemEventLoop::take().unwrap();
     let nvs = EspDefaultNvsPartition::take().unwrap();
-    slint::platform::set_platform(Box::new(MyPlatform {
+    slint::platform::set_platform(Box::new(Esp32Platform {
         window: window.clone(),
+        peripherals: Rc::clone(&peripherals),
     }))
     .unwrap();
     // Make sure the window covers our entire screen.
     window.set_size(slint::PhysicalSize::new(240, 320));
-    log::info!("before appwindowFree Heap: {} bytes", unsafe {esp_get_free_heap_size()});
+    let window_1 = Rc::downgrade(&window);
+    log::info!("before appwindowFree Heap: {} bytes", unsafe {
+        esp_get_free_heap_size()
+    });
     let app = AppWindow::new().unwrap();
 
     let mut wifi = BlockingWifi::wrap(
         EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs)).unwrap(),
         sys_loop,
-    ).unwrap();
-
+    )
+    .unwrap();
 
     let pwr_status = PinDriver::input(peripherals.pins.gpio6).unwrap();
     let mut pwr_en = PinDriver::output(peripherals.pins.gpio7).unwrap();
-    
+
     if pwr_status.is_low() {
         FreeRtos::delay_ms(10);
         let mut counter_delay: u16 = 0;
@@ -337,6 +360,7 @@ pub fn init_window() {
             if counter_delay > 1 {
                 FreeRtos::delay_ms(5);
                 log::info!("BUG 2: {}\n", pwr_status.is_low());
+                app.set_screen_state(ScreenState::HomeLock);
                 pwr_en.set_high().unwrap();
             }
         }
@@ -356,6 +380,7 @@ pub fn init_window() {
                         log::info!("Set Power system Off.\n");
                         pwr_en.set_low().unwrap();
                         FreeRtos::delay_ms(1000);
+                        //app.set_screen_state(ScreenState::HomeLock);
                         break;
                     }
                 }
@@ -364,11 +389,12 @@ pub fn init_window() {
             thread::sleep(Duration::from_millis(800));
         }
     });
-   // let power_en = PinDriver::output(peripherals.pins.gpio7);
+    // let power_en = PinDriver::output(peripherals.pins.gpio7);
     setup_wifi(&mut wifi);
     //setup_wifi(&mut scan_wifi);
+
     let wifi_sta_mac = wifi.wifi().get_mac(WifiDeviceId::Sta).unwrap();
-    let qr_pic = generate_qr_code(&wifi_sta_mac);    
+    let qr_pic = generate_qr_code(&wifi_sta_mac);
     let spi = peripherals.spi2;
     let sclk = peripherals.pins.gpio40; //MTDO
     let mosi = peripherals.pins.gpio45; //
@@ -376,29 +402,22 @@ pub fn init_window() {
     let cs = peripherals.pins.gpio42; //MTDI
     let config = Config::new().baudrate(40.MHz().into());
     // Define the delay struct, needed for the display driver
-    //let mut delay = Ets;
     let mut display_delay = Delay::new(500_000u32);
-    //display_delay.delay_ns(500_000u32);
     // Define the Data/Command select pin as a digital output
     let spi_config = SpiDriverConfig::new().dma(esp_idf_hal::spi::Dma::Auto(4096 as usize));
-    let spi_device = SpiDeviceDriver::new_single(
-        spi,
-        sclk,
-        mosi,
-        Some(miso),
-        Some(cs),
-        &spi_config,
-        &config,
-    ).unwrap();
+    let spi_device =
+        SpiDeviceDriver::new_single(spi, sclk, mosi, Some(miso), Some(cs), &spi_config, &config)
+            .unwrap();
     let buffer = BUFFER.init([0; 512]);
     let slice: &'static mut [u8] = buffer;
     let dc = PinDriver::output(peripherals.pins.gpio41).unwrap(); //MTDI
     let rst = PinDriver::output(peripherals.pins.gpio39).unwrap(); //MTCK
-    // Define the display interface with no chip select
+                                                                   // Define the display interface with no chip select
     let di = SpiInterface::new(spi_device, dc, slice);
     let mut display = Builder::new(ST7789, di)
         .reset_pin(rst)
-        .color_order(ColorOrder::Rgb).invert_colors(ColorInversion::Inverted)
+        .color_order(ColorOrder::Rgb)
+        .invert_colors(ColorInversion::Inverted)
         .init(&mut display_delay)
         .unwrap();
 
@@ -409,18 +428,24 @@ pub fn init_window() {
     let touch_scl_pin = peripherals.pins.gpio3;
     let touch_i2c_config = I2cConfig::new().baudrate(400.kHz().into());
     let i2c = peripherals.i2c0;
-    let mut touch_i2c = I2cDriver::new(i2c, touch_sda_pin, touch_scl_pin, &touch_i2c_config).unwrap();
-    let mut delay_source:Delay = Default::default();
-    let bus: &'static shared_bus::BusManager<Mutex<i2c::I2cDriver<'_>>> = shared_bus::new_std!(i2c::I2cDriver = touch_i2c).unwrap();
+    let mut touch_i2c =
+        I2cDriver::new(i2c, touch_sda_pin, touch_scl_pin, &touch_i2c_config).unwrap();
+    let mut delay_source: Delay = Default::default();
+    let bus: &'static shared_bus::BusManager<Mutex<i2c::I2cDriver<'_>>> =
+        shared_bus::new_std!(i2c::I2cDriver = touch_i2c).unwrap();
 
     let mut touch = Cst328::new(bus.acquire_i2c(), delay_source);
     touch.reset(&mut touch_rst, &mut delay_source).unwrap();
 
-    let mut line_buffer_1 = [slint::platform::software_renderer::Rgb565Pixel(0); DISPLAY_WIDTH as usize];
-    let mut line_buffer_2 = [slint::platform::software_renderer::Rgb565Pixel(0); DISPLAY_WIDTH as usize];
+    let mut line_buffer_1 =
+        [slint::platform::software_renderer::Rgb565Pixel(0); DISPLAY_WIDTH as usize];
+    let mut line_buffer_2 =
+        [slint::platform::software_renderer::Rgb565Pixel(0); DISPLAY_WIDTH as usize];
 
     //Create animation controller with pre-processed frames
-    let controller = Rc::new(RefCell::new(AnimationController::new(&CHIRPLUNK_3_SIT_RGBA8_FRAMES)));
+    let controller = Rc::new(RefCell::new(AnimationController::new(
+        &CHIRPLUNK_3_SIT_RGBA8_FRAMES,
+    )));
 
     {
         let mut ctrl = controller.borrow_mut();
@@ -431,15 +456,13 @@ pub fn init_window() {
     let controller_clone = controller.clone();
     let app_weak = app.as_weak();
     let timer = slint::Timer::default();
-    
+
     timer.start(
         slint::TimerMode::Repeated,
         Duration::from_millis(16),
         move || {
             let app = match app_weak.upgrade() {
-                Some(app) => {
-                    app
-                }
+                Some(app) => app,
                 None => return,
             };
             let mut ctrl = controller_clone.borrow_mut();
@@ -449,7 +472,7 @@ pub fn init_window() {
             }
         },
     );
-    timer.stop();
+    //timer.stop();
 
     let mut bl = PinDriver::output(peripherals.pins.gpio5).unwrap();
     let weak = app.as_weak();
@@ -467,103 +490,103 @@ pub fn init_window() {
         }
     });
     //let ota_version = board_ota.version.unwrap();
-    app.global::<UpdateFwCallback>().on_get_version(||{
+    app.global::<UpdateFwCallback>().on_get_version(|| {
         let mut ota = OtaUpdate::new();
         let _ = ota.get_new_fw_info(true).unwrap();
         let version = ota.version.unwrap();
         SharedString::from(version)
     });
-    app.global::<UpdateFwCallback>().on_exec_update(move ||{
+    app.global::<UpdateFwCallback>().on_exec_update(move || {
         let mut ota = OtaUpdate::new();
         let _ = ota.firmware_update();
     });
-    app.global::<AnimationSwitch>().on_animation_switch(move |action, animal| {
-                log::info!("{:?} - {:?}", action, animal);
-                let mut ctrl = controller.borrow_mut();
-                match animal {
-                    Animal::Chirplunk => {
-                        match action {
-                            GameState::Normal => {
-                                ctrl.switch_gif(&CHIRPLUNK_3_SIT_RGBA8_FRAMES);
-                            },
-                            GameState::Eating => {
-                                ctrl.switch_gif(&CHIRPLUNK_3_EAT_RGBA8_FRAMES);
-                            },
-                            GameState::Sleeping => {
-                                ctrl.switch_gif(&CHIRPLUNK_3_SLEEP_RGBA8_FRAMES);
-                            },
-                            GameState::Playing => {
-                                ctrl.switch_gif(&CHIRPLUNK_3_JUMP_RGBA8_FRAMES);
-                            }
-                        }
-                    },
-                    Animal::Mechapup => {
-                        match action {
-                            GameState::Normal => {
-                                ctrl.switch_gif(&MECHAPUP_3_SIT_RGBA8_FRAMES);
-                            },
-                            GameState::Eating => {
-                                ctrl.switch_gif(&MECHAPUP_3_EAT_RGBA8_FRAMES);
-                            },
-                            GameState::Sleeping => {
-                                ctrl.switch_gif(&MECHAPUP_3_SLEEP_RGBA8_FRAMES);
-                            },
-                            GameState::Playing => {
-                                ctrl.switch_gif(&MECHAPUP_3_JUMP_RGBA8_FRAMES);
-                            }
-                        }
-                    },
-                    Animal::LunaFluff => {
-                        match action {
-                            GameState::Normal => {
-                                ctrl.switch_gif(&LUNAFLUFF_4_SIT_RGBA8_FRAMES);
-                            },
-                            GameState::Eating => {
-                                ctrl.switch_gif(&LUNAFLUFF_4_EAT_RGBA8_FRAMES);
-                            },
-                            GameState::Sleeping => {
-                                ctrl.switch_gif(&LUNAFLUFF_4_SLEEP_RGBA8_FRAMES);
-                            },
-                            GameState::Playing => {
-                                ctrl.switch_gif(&LUNAFLUFF_4_JUMP_RGBA8_FRAMES);
-                            }
-                        }
+    app.global::<AnimationSwitch>()
+        .on_animation_switch(move |action, animal| {
+            log::info!("{:?} - {:?}", action, animal);
+            let mut ctrl = controller.borrow_mut();
+            match animal {
+                Animal::Chirplunk => match action {
+                    GameState::Normal => {
+                        ctrl.switch_gif(&CHIRPLUNK_3_SIT_RGBA8_FRAMES);
                     }
-                }
-    });
+                    GameState::Eating => {
+                        ctrl.switch_gif(&CHIRPLUNK_3_EAT_RGBA8_FRAMES);
+                    }
+                    GameState::Sleeping => {
+                        ctrl.switch_gif(&CHIRPLUNK_3_SLEEP_RGBA8_FRAMES);
+                    }
+                    GameState::Playing => {
+                        ctrl.switch_gif(&CHIRPLUNK_3_JUMP_RGBA8_FRAMES);
+                    }
+                },
+                Animal::Mechapup => match action {
+                    GameState::Normal => {
+                        ctrl.switch_gif(&MECHAPUP_3_SIT_RGBA8_FRAMES);
+                    }
+                    GameState::Eating => {
+                        ctrl.switch_gif(&MECHAPUP_3_EAT_RGBA8_FRAMES);
+                    }
+                    GameState::Sleeping => {
+                        ctrl.switch_gif(&MECHAPUP_3_SLEEP_RGBA8_FRAMES);
+                    }
+                    GameState::Playing => {
+                        ctrl.switch_gif(&MECHAPUP_3_JUMP_RGBA8_FRAMES);
+                    }
+                },
+                Animal::LunaFluff => match action {
+                    GameState::Normal => {
+                        ctrl.switch_gif(&LUNAFLUFF_4_SIT_RGBA8_FRAMES);
+                    }
+                    GameState::Eating => {
+                        ctrl.switch_gif(&LUNAFLUFF_4_EAT_RGBA8_FRAMES);
+                    }
+                    GameState::Sleeping => {
+                        ctrl.switch_gif(&LUNAFLUFF_4_SLEEP_RGBA8_FRAMES);
+                    }
+                    GameState::Playing => {
+                        ctrl.switch_gif(&LUNAFLUFF_4_JUMP_RGBA8_FRAMES);
+                    }
+                },
+            }
+        });
     wifi.connect().unwrap();
     wifi.wait_netif_up().unwrap();
     let wifi_rc = Rc::new(RefCell::new(wifi));
     // let active_scan = Rc::clone(&wifi_rc);
     // let active_scan = active_scan.borrow_mut();
-    app.global::<WiFiScan>().on_activate_wifi_scan(move ||{
+    app.global::<WiFiScan>().on_activate_wifi_scan(move || {
         let weak = weak.clone();
         let list_ssid = wifi_rc.clone().borrow_mut().scan().unwrap();
         let ssids: Vec<SharedString> = list_ssid
-        .iter()
-        .map(|ap| SharedString::from(ap.ssid.as_str()))
-        .collect();
+            .iter()
+            .map(|ap| SharedString::from(ap.ssid.as_str()))
+            .collect();
         log::info!("{:?}", ssids);
         let list = ModelRc::from(Rc::new(VecModel::from(ssids)));
         weak.unwrap().set_scanned_ssid(list);
     });
 
-    log::info!("before wifi SetQR: {} bytes", unsafe {esp_get_free_heap_size()});
+    log::info!("before wifi SetQR: {} bytes", unsafe {
+        esp_get_free_heap_size()
+    });
     {
         app.set_qr_image(qr_pic);
-        app.set_deviceID(SharedString::from(DEVICE_ID));
+        app.set_deviceID(SharedString::from(short_device_id(DEVICE_ID)));
     }
-    log::info!("before wifi Heap: {} bytes", unsafe {esp_get_free_heap_size()});
-
-
+    log::info!("before wifi Heap: {} bytes", unsafe {
+        esp_get_free_heap_size()
+    });
     // let mac = wifi.wifi().sta_netif().get_mac().unwrap();
     //let qr = generate_qr_code(format!("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]));
     //app.set_qr_image(qr);
-    log::info!("before http Heap: {} bytes", unsafe {esp_get_free_heap_size()});
+    log::info!("before http Heap: {} bytes", unsafe {
+        esp_get_free_heap_size()
+    });
     //let api_response = get_request().unwrap();
     let mut last_touch = None;
-    //let wifi_connected = Rc::clone(&wifi_rc);
-    //let wifi_connected = wifi_connected.borrow();
+    // let wifi_connected = Rc::clone(&wifi_rc);
+    // let wifi_connected = wifi_connected.borrow();
+
     loop {
         bl.set_high().unwrap();
         slint::platform::update_timers_and_animations();
@@ -582,19 +605,24 @@ pub fn init_window() {
         //    }
         // }
 
-        match app.get_screen_state() {
-            ScreenState::Game => {
-                timer.restart();
-            }
-            _ =>  {
-                timer.stop();
-            }
-        };
+        // match app.get_screen_state() {
+        //     ScreenState::Game => {
+        //         // let mut ctrl = controller.borrow_mut();
+        //         // ctrl.start();
+        //         timer.restart();
+        //     }
+        //     _ =>  {
+        //         timer.stop();
+        //     }
+        // };
 
         match touch.get_xy_data() {
             Ok(Some(event_touch)) => {
-                let pos = slint::PhysicalPosition::new(event_touch.x_cord as i32, event_touch.y_cord as i32)
-                    .to_logical(window.scale_factor());
+                let pos = slint::PhysicalPosition::new(
+                    event_touch.x_cord as i32,
+                    event_touch.y_cord as i32,
+                )
+                .to_logical(window.scale_factor());
                 let event = if let Some(previous_pos) = last_touch.replace(pos) {
                     // If the position changed, send a PointerMoved event.
                     if previous_pos != pos {
@@ -614,7 +642,7 @@ pub fn init_window() {
                 log::info!("{:?}", event);
                 window.try_dispatch_event(event).unwrap();
                 FreeRtos::delay_ms(50);
-            },
+            }
             Ok(None) => {
                 if let Some(pos) = last_touch.take() {
                     let event_release = WindowEvent::PointerReleased {
@@ -628,14 +656,14 @@ pub fn init_window() {
                     window.try_dispatch_event(event_exit).unwrap();
                 }
                 //continue;
-            },
+            }
             Err(_) => {
                 log::info!("Error when reading touch");
                 todo!("Implement errror handle if have to");
             }
         }
         //Rendering 320x240 takes more than 200ms :(, which is suck
-        
+
         window.draw_if_needed(|renderer| {
             let render_start = Instant::now();
             renderer.render_by_line(DisplayWrapper {
@@ -649,6 +677,5 @@ pub fn init_window() {
         //     continue;
         // }
         //FreeRtos::delay_ms(50);
-        
     }
 }

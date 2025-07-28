@@ -117,6 +117,7 @@ export component WifiDisconnected inherits Window {
 
 export global WiFiScan {
     pure callback activate_wifi_scan();
+    pure callback connected_wifi() -> WiFiConnectParameters;
 }
 export  {UpdateFwCallback} 
 export component AppWindow inherits Window {
@@ -254,6 +255,8 @@ export component AppWindow inherits Window {
     Image {
         x: 43px;
         y: 32px;
+        height: 152px;
+        width: 152px;
         visible: root.screen_state == ScreenState.Game;
         source: current_frame;
     }

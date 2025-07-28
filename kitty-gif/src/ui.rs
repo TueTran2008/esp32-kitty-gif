@@ -1,12 +1,13 @@
 use embedded_graphics::{pixelcolor::raw::RawU16, prelude::*, primitives::Rectangle};
+use esp_idf_hal::prelude::Peripherals;
 use esp_idf_svc::systime::EspSystemTime;
 use slint::platform::{software_renderer::MinimalSoftwareWindow, Platform};
-use std::{rc::Rc};
-pub struct MyPlatform {
-    pub window: Rc<MinimalSoftwareWindow>
+use std::{rc::Rc, cell::RefCell};
+pub(crate) struct Esp32Platform {
+    pub window: Rc<MinimalSoftwareWindow>,
 }
 
-impl Platform for MyPlatform {
+impl Platform for Esp32Platform {
     fn create_window_adapter(
         &self,
     ) -> Result<Rc<dyn slint::platform::WindowAdapter>, slint::PlatformError> {
