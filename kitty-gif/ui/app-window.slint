@@ -118,7 +118,8 @@ export component WifiDisconnected inherits Window {
 export global WiFiScan {
     pure callback activate_wifi_scan();
 }
-export  {UpdateFwCallback} 
+export  {UpdateFwCallback}
+
 export component AppWindow inherits Window {
     preferred-height: 320px;
     preferred-width: 240px;
@@ -321,6 +322,7 @@ export component AppWindow inherits Window {
             WiFiScan.activate_wifi_scan();
         }
         go_fw_update => {
+            root.fw_version = UpdateFwCallback.get_version();
             root.screen_state = ScreenState.UpdateFirmware;
         }
     }

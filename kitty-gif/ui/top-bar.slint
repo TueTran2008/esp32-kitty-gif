@@ -25,8 +25,6 @@ export component TopBar inherits Rectangle {
             height: 12px;
             signal-wifi-2-fill := Image {
                 x: 0;
-                y: 0;
-                //horizontal-alignment: ImageHorizontalAlignment.center;
                 colorize: #ffffff;
                 source: @image-url("assets/wifi.svg");
             }
@@ -37,13 +35,11 @@ export component TopBar inherits Rectangle {
                 height: 12px;
                 mind-map := Image {
                     x: 0px;
-                    y: 0px;
                     colorize: #ffffff;
                     source: @image-url("assets/mind-map.svg");
                 }
                 _02 := Text {
                     x: 14px;
-                    y: -1px;
                     text: status.wifi-signal;
                     color: #89dd47;
                     font-family: "Roboto Mono";
@@ -55,7 +51,6 @@ export component TopBar inherits Rectangle {
         }
         time_text := Text {
             x: 106px;
-            y: 13.5px;
             text: status.time;
             color: #ffffff;
             font-family: "Roboto Mono";
@@ -70,7 +65,6 @@ export component TopBar inherits Rectangle {
             height: 12px;
             battery-fill := Image {
                 x: 48.44px;
-                y: 0px;
                 width: 12px;
                 height: 12px;
                 source: @image-url("assets/battery-fill.svg");
@@ -78,7 +72,6 @@ export component TopBar inherits Rectangle {
             }
             battery_text := Text {
                 x: 63px;
-                y: 1px;
                 text: status.battery;
                 color: #ffffff;
                 font-family: "Roboto Mono";

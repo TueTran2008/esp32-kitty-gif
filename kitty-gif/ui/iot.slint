@@ -1,7 +1,6 @@
 import { Button, VerticalBox, HorizontalBox, ProgressIndicator, ScrollView} from "std-widgets.slint";
 export component Circle {
     in property <float> progress: 100%;
-    
     Rectangle {
         width: parent.width;
         height: parent.height;
@@ -311,6 +310,7 @@ export component IoT inherits Rectangle{
                             height: 18px;
                             alcohol-level := Text {
                                 y: 1.5px;
+                                x: 0px;
                                 text: "Alcohol Level";
                                 color: #ffffff;
                                 font-family: "Roboto Mono";
