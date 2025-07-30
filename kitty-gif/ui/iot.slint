@@ -50,12 +50,15 @@ export component IoT inherits Rectangle{
         width: 225.28px;
         height: 32px;
     }
-    frame-52 := Image {
+    frame-52 := Rectangle {
         x: 12px;
         y: 36px;
         width: 32px;
         height: 32px;
-        colorize: white;
+        Image {
+            colorize: white;
+            source: @image-url("assets/arrow-left-wide-line.svg");
+        }
         TouchArea {
             height: 64px;
             width: 64px;
@@ -63,7 +66,7 @@ export component IoT inherits Rectangle{
                 root.go_back();
             }
         }
-        source: @image-url("assets/arrow-left-wide-line.svg");
+
     }
     sv := Flickable {
         in-out property<length> value <=> self.viewport-y;

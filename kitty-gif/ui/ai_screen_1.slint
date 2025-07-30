@@ -1,12 +1,15 @@
 export component AI1 inherits Rectangle {
     callback go_back();
     ai := Rectangle {
-        frame-52 := Image {
+        frame-52 := Rectangle {
             x: 12px;
             y: 36px;
             width: 32px;
             height: 32px;
-            colorize: white;
+            Image {
+                colorize: white;
+                source: @image-url("assets/arrow-left-wide-line.svg");
+            }
             TouchArea {
                 width: 50px;
                 height: 50px;
@@ -14,7 +17,7 @@ export component AI1 inherits Rectangle {
                     root.go_back();
                 }
             }
-            source: @image-url("assets/arrow-left-wide-line.svg");
+            
         }
         frame-12 := Rectangle {
             x: 47px;

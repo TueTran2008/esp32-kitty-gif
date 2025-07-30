@@ -135,7 +135,6 @@ export component AppWindow inherits Window {
     in-out property <Animal> game_animal: Animal.Chirplunk;
     in-out property <string> fw_version;
     in-out property <string> new_fw_version;
-
     TopBar {
         x: 0;
         y: 0;
@@ -252,12 +251,15 @@ export component AppWindow inherits Window {
             root.screen_state = ScreenState.Home;
         }
     }
+
     Image {
         x: 43px;
         y: 32px;
         visible: root.screen_state == ScreenState.Game;
         source: current_frame;
     }
+    
+
     Home {
         x: 0;
         y: 0;

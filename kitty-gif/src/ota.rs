@@ -143,13 +143,14 @@ impl OtaUpdate {
                 }
             };
             if dl_result.is_err() {
+                log::error!("Error while downloading firmwre");
                 return work.abort();
             }
             if total_read_len < file_size {
                 log::error!("Supposed to download {file_size} bytes, but we could only get {total_read_len}. May be network error?");
                 return work.abort();
             }
-            work.complete();
+            let _ = work.complete();
             return Ok(());
         } else {
             log::warn!("Invalid URL to download firmware");

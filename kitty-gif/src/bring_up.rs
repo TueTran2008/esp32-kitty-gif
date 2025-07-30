@@ -14,7 +14,6 @@ use esp_idf_hal::{
     spi::{config::Config, SpiDeviceDriver, SpiDriverConfig},
 };
 use esp_idf_svc::hal::gpio::{Output, PinDriver};
-use esp_idf_svc::hal::spi::SpiDriver;
 use mipidsi::interface::SpiInterface;
 use mipidsi::models::ST7789;
 use mipidsi::Builder;
@@ -378,7 +377,7 @@ pub fn init_window() {
                 while pwr_status.is_low() {
                     counter_delay = counter_delay + 1;
                     FreeRtos::delay_ms(5);
-                    if (counter_delay > 80) {
+                    if counter_delay > 80 {
                         log::info!("Set Power system Off.\n");
                         pwr_en.set_low().unwrap();
                         FreeRtos::delay_ms(1000);
@@ -474,7 +473,6 @@ pub fn init_window() {
             }
         },
     );
-    timer.stop();
 
     let mut bl = PinDriver::output(peripherals.pins.gpio5).unwrap();
     let weak = app.as_weak();
@@ -554,11 +552,13 @@ pub fn init_window() {
     wifi.connect().unwrap();
     wifi.wait_netif_up().unwrap();
     let wifi_rc = Rc::new(RefCell::new(wifi));
-    // let active_scan = Rc::clone(&wifi_rc);
-    // let active_scan = active_scan.borrow_mut();
+    let active_scan = Rc::clone(&wifi_rc);
+
     app.global::<WiFiScan>().on_activate_wifi_scan(move || {
         let weak = weak.clone();
-        let list_ssid = wifi_rc.clone().borrow_mut().scan().unwrap();
+        log::info!("Darwin active scan called");
+        let mut scan = active_scan.borrow_mut();
+        let list_ssid = scan.scan().unwrap();
         let ssids: Vec<SharedString> = list_ssid
             .iter()
             .map(|ap| SharedString::from(ap.ssid.as_str()))
@@ -607,14 +607,14 @@ pub fn init_window() {
         //    }
         // }
 
-        match app.get_screen_state() {
-            ScreenState::Game => {
-                timer.restart();
-            }
-            _ => {
-                timer.stop();
-            }
-        };
+        // match app.get_screen_state() {
+        //     ScreenState::Game => {
+        //         timer.restart();
+        //     }
+        //     _ => {
+        //         timer.stop();
+        //     }
+        // };
 
         match touch.get_xy_data() {
             Ok(Some(event_touch)) => {
